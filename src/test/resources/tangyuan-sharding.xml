@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sharding>
+
+	<!-- <shardingClass id="mySharding" class="org.xson.tangyuan.sharding.HashShardingHandler"/> -->
+	
+	<table name="user" dataSource="lifeGourp" mode="range" dbCount="1" tableCount="2" tableCapacity="100" keys="id" />
+	
+</sharding>

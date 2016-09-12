@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.tangyuan.org/xsd/tangyuan-configuration.xsd">
+
+	<!--纯手工定义-->
+	<resultMap id="user" type="com.xson.User">
+		<result property="studentId" column="STUDENT_ID" primaryKey="true" />
+		<result property="studentName" column="STUDENT_NAME" typeHandler="org.apache.ibatis.type.BlobTypeHandler" />
+	</resultMap>
+
+	<!--系统自定义的默认的属性转换: 列名和属性名一致-->
+	<mappingClass id="default_bean_mapping" class="xxx.xxx.xxx"/>
+
+	<!--用户自定义的-->
+	<mappingClass id="myMapping" class="xxx.xxx.xxx"/>
+
+	<!--匹配所有POJO, 并同时更具resultType中指定的类型来映射-->
+	<resultMap id="bean" type="*" rule="myMapping" />
+	<resultMap id="bean2" type="*" rule="myMapping" />
+
+	<!--增加过滤的规则映射-->
+	<resultMap id="user" type="com.xson.User" rule="myMapping">
+		<result property="studentId" column="STUDENT_ID" primaryKey="true" />
+		<result property="studentName" column="STUDENT_NAME" typeHandler="org.apache.ibatis.type.BlobTypeHandler" />
+	</resultMap>	
+	
+	<mapper  	resource="beanconfigs/applicationContext_1.xml" />
+	<sharding 	resource="beanconfigs/applicationContext_2.xml" />
+	<plugin 	resource="beanconfigs/applicationContext_2.xml" />
+	<plugin 	resource="beanconfigs/applicationContext_2.xml" />
+	<plugin 	resource="beanconfigs/applicationContext_2.xml" />
+	
+	<sql-service id="sql-1" txRef="tx_01" dsKey="readLife">
+		<selectSet resultKey="{set}">
+			SELECT * from user
+		</selectSet>
+		<log level="info" message="这是一条xml日志" />
+		<setvar key="{x}" value="null"  />
+		<selectSet resultKey="{set1}">
+			SELECT * from user2
+		</selectSet>
+		<transGroup txRef="tx_01">
+			
+		</transGroup>
+		
+		<!-- 错误返回,抛出异常,并说明错误信息,程序可回滚, 这里指的是用户手工抛出异常, 当然，程序也会自动抛出异常, 需要区分开, 是否需要在if标签中，还是直接存在if标签 -->
+		<exception test="" code="" message="" i18n=""/>
+		
+		<foreach index="{i}" open="(" separator="," close=")">
+			#{tag[i]} in n.tags
+		</foreach>		
+
+		<foreach collection="{}"/>
+
+		<foreach collection="{}" open="(" separator="," close=")" />
+
+		<foreach collection="{}" index="{}" open="(" separator="," close=")">
+			#{tag[i]} in n.tags
+			#{tag[i]}
+			#{tag[{i}]}
+		</foreach>
+		
+		<foreach collection="{}" index="i">
+			select *
+		</foreach>		
+		
+		
+		<call service="" result="{x}">
+			
+		</call>
+		<!-- 
+			1. 生产,相隔的字符串
+			2. 多个其他操作
+		 -->
+		
+		<!-- 最终返回 -->
+
+		<return />
+		
+		<!-- 返回一个 -->
+		<return result="{x}" resultType="map" resultMap="" resultStruct="" />
+		
+		<!-- 返回多个 -->
+		<return result="{x}" resultStruct="">
+			<property name="{map_x}" value="{y}"/><!-- name可省略, 同value的key -->
+		</return>
+
+		<!--  result和property二选一 -->
+		<return>
+			<property name="{e}" value="{set}"/><!-- name可省略, 同value的key -->
+		</return>		
+		
+		
+	</sql-service>	
+	
+</configuration>

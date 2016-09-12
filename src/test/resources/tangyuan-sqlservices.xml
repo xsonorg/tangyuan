@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sqlservices ns="">
+
+	<sql id="sql_1">
+		where id = #{id}
+	</sql>
+
+	<!-- cache="" resultType="map" resultMap="" resultStruct="" setType="array" -->
+	<selectSet id="select1" resultMap="user" txRef="tx_01" dsKey="readLife" wrapperKey="">
+		SELECT * from user 
+		<include ref="sql_1"/>
+	</selectSet>
+	
+	<selectSet id="select2" txRef="tx_01" dsKey="readLife">
+		SELECT * from user 
+		<include ref="sql_1"/>
+	</selectSet>	
+	
+	<selectOne id="select3" txRef="tx_01" dsKey="readLife">
+		SELECT * from tt where id = #{id|1}
+	</selectOne>
+	
+	
+	<insert id="insert1" txRef="tx_01" dsKey="readLife">
+		INSERT into tt(name, time1) VALUES(#{name}, #{time1})
+	</insert>
+	
+	<insert id="insert2" resultType="id" txRef="tx_01" dsKey="readGaop">
+		INSERT into tt(name) VALUES(#{name})
+	</insert>
+	
+	<insert id="insert3" resultType="id" txRef="tx_01" dsKey="readGaop">
+		INSERT into tt(name) VALUES
+		<foreach collection="{names}" index="{i}" separator=",">
+			(#{names[i]})
+		</foreach>			
+	</insert>		
+<!-- 
+	sql-service:
+		dsKey: 
+			1. 可以为空,则后面的命令必须设置,
+			2. 不为空, 则后面可为空
+			3. 后面的可覆盖目前设置的
+	selectSet:
+		resultKey: 返回对象关键字
+-->
+	<sql-service id="sql-1" txRef="tx_01" dsKey="readLife" resultType="map|xco">
+		<selectSet resultKey="{set}">
+			SELECT * from user
+		</selectSet>
+		
+		<selectOne resultKey="{user}">
+			SELECT * from user where id = 1
+		</selectOne>
+		
+		<selectVar resultKey="{user_name}">
+			SELECT name from user where id = 1
+		</selectVar>		
+		
+		<setvar key="{x}" value="1"  />
+		<log level="info" message="这是一条xml{set.length}日志" />
+		
+		<if test="{x} &lt; 0">
+			<log level="info" message="if测试1" />
+		</if>
+		<elseif test="{x} &lt; 1">
+			<log level="info" message="if测试2" />
+		</elseif>
+		<elseif test="{x} &lt; 2">
+			<log level="info" message="if测试3" />
+		</elseif>		
+		<else>
+			<log level="info" message="if测试4" />
+		</else>		
+		
+		<!-- <foreach collection="{array}"/> -->
+		
+		<exception test="{set.length} &gt; 1" code="1" message="这里是什么" i18n=""/>
+		
+		<selectSet resultKey="{set1}">
+			SELECT * from user2 where id in
+			<!--
+			<foreach collection="{ids}"/>
+			 -->
+ 			<foreach collection="{ids}" index="{i}" open="(" separator="," close=")">
+				#{ids[i]}
+			</foreach>
+		</selectSet>
+		
+		<foreach collection="{ids}" index="{i}">
+			<insert rowCount="{nCount}">
+				INSERT into user2(name) VALUES(#{name})
+			</insert>
+		</foreach>		
+		
+		
+		<transGroup txRef="tx_02">
+			<delete rowCount="{nCount}">
+				DELETE FROM user2 where id = #{id}
+			</delete>			
+		</transGroup>
+		
+		<update rowCount="{nCount}">
+			update user2 set name='高' where id = #{id}
+		</update>		
+
+		<insert rowCount="{nCount}">
+			INSERT into user2(name) VALUES(#{name})
+		</insert>
+		
+		<!-- <transGroup txRef="tx_01">事务组</transGroup> -->
+		<return value="{set1}" />
+	</sql-service>
+	
+	<sql-service id="sql-2" txRef="tx_01" dsKey="lifeGourp">
+		<log level="info" message="分库分表测试" />
+		<selectSet resultKey="{set}">
+			SELECT * from {DT:user} where id = 1
+		</selectSet>
+	</sql-service>
+	
+</sqlservices>

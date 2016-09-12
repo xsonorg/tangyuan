@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+	<!--数据源配置-->
+	<dataSource id="readLife" type="DBCP" isDefault="true">
+		<property name="username" value="root" />
+		<property name="password" value="123456" />
+		<property name="url" value="jdbc:mysql://127.0.0.1:3306/orm1?Unicode=true&amp;characterEncoding=utf8" />
+		<property name="driver" value="com.mysql.jdbc.Driver" />
+	</dataSource>
+	
+	<dataSource id="readGaop" type="DBCP">
+		<property name="username" value="root" />
+		<property name="password" value="123456" />
+		<property name="url" value="jdbc:mysql://127.0.0.1:3306/gaop?Unicode=true&amp;characterEncoding=utf8" />
+		<property name="driver" value="com.mysql.jdbc.Driver" />
+	</dataSource>	
+
+<!-- 
+<dataSourceGroup id="lifeGourp" type="DBCP" dsKeyPattern="lifeGourp.{}" start="0" end="4">
+<dataSourceGroup id="lifeGourp" type="DBCP" pattern="lifeGourp{}" start="0" end="4" values="a,b,c">
+lifeGourp.0/lifeGourp.1
+ -->
+	<dataSourceGroup groupId="lifeGourp" type="DBCP" start="0" end="4">
+		<property name="username" value="root" />
+		<property name="password" value="123456" />
+		<property name="url" value="jdbc:mysql://127.0.0.1:3306/orm{}?Unicode=true&amp;characterEncoding=utf8" />
+		<property name="driver" value="com.mysql.jdbc.Driver" />
+		<!-- <property name="openTest" value="true" /> -->
+	</dataSourceGroup>
+	
+	<transaction id="tx_01" behavior="required" 	isolation="default" 			timeout="200" readOnly="false"/>
+	<transaction id="tx_02" behavior="REQUIRES_NEW" isolation="read_uncommitted" 	timeout="200" readOnly="false" />
+
+	<setDefaultTransaction type="method">
+		<property name="select*" 	value="tx_01"/>
+		<property name="get*" 		value="tx_01"/>
+		<property name="update*" 	value="tx_02"/>
+		<property name="insert*" 	value="tx_02"/>
+		<property name="delete*" 	value="tx_02"/>
+	</setDefaultTransaction>
+	
+	<cache id="cache1" type="local" class="org.xson.tangyuan.cache.MemcachedCache" default="true">
+		<property name="strategy" value="FIFO"/>
+		<property name="flushInterval" value="86400000"/>
+		<property name="maxSize" value="1000"/>
+	</cache>
+	
+	<cache id="cache2" type="local" resource="tangyuan-mapper.xml">
+		<property name="strategy" value="FIFO"/>
+		<property name="flushInterval" value="86400000"/>
+		<property name="maxSize" value="1000"/>
+	</cache>	
+	
+	<cacheGroup id="cacheGroup">
+		<cache ref="cache1" include="" exclude="" />
+		<cache ref="cache2" include="" exclude="" />
+	</cacheGroup>
+
+	<mapper  	resource="tangyuan-mapper.xml" />		<!-- one -->
+	<sharding 	resource="tangyuan-sharding.xml" />		<!-- one -->
+	<plugin 	resource="tangyuan-sqlservices.xml" />	<!-- more -->
+	
+</configuration>
