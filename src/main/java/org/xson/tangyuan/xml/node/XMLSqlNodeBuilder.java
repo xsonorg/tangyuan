@@ -54,8 +54,8 @@ public class XMLSqlNodeBuilder {
 
 	// private boolean licenses = true;
 
-	public XMLSqlNodeBuilder(InputStream inputStream, XmlConfigurationBuilder xmlConfigurationBuilder, XmlMapperBuilder xmlMapperBuilder,
-			Map<String, SqlNode> integralRefMap, Map<String, Integer> integralServiceMap) {
+	public XMLSqlNodeBuilder(InputStream inputStream, XmlConfigurationBuilder xmlConfigurationBuilder, XmlMapperBuilder xmlMapperBuilder, Map<String, SqlNode> integralRefMap,
+			Map<String, Integer> integralServiceMap) {
 		this.parser = new XPathParser(inputStream);
 		this.xmlConfigurationBuilder = xmlConfigurationBuilder;
 		this.xmlMapperBuilder = xmlMapperBuilder;
@@ -78,21 +78,21 @@ public class XMLSqlNodeBuilder {
 	}
 
 	private void registerService(List<AbstractSqlNode> list, String nodeName) {
-		// for (AbstractSqlNode node : list) {
-		// TangYuanContainer.getInstance().addSqlService(node);
-		// log.info("add <" + nodeName + "> node: " + node.getServiceKey());
-		// }
-		boolean result = TangYuanContainer.getInstance().hasLicenses();
 		for (AbstractSqlNode node : list) {
-			if (result) {
-				TangYuanContainer.getInstance().addSqlService(node);
-			} else {
-				if (NumberUtils.randomSuccess()) {
-					TangYuanContainer.getInstance().addSqlService(node);
-				}
-			}
+			TangYuanContainer.getInstance().addSqlService(node);
 			log.info("add <" + nodeName + "> node: " + node.getServiceKey());
 		}
+		// boolean result = TangYuanContainer.getInstance().hasLicenses();
+		// for (AbstractSqlNode node : list) {
+		// if (result) {
+		// TangYuanContainer.getInstance().addSqlService(node);
+		// } else {
+		// if (NumberUtils.randomSuccess()) {
+		// TangYuanContainer.getInstance().addSqlService(node);
+		// }
+		// }
+		// log.info("add <" + nodeName + "> node: " + node.getServiceKey());
+		// }
 	}
 
 	private String getResultKey(String str) {
@@ -400,8 +400,7 @@ public class XMLSqlNodeBuilder {
 					cacheUse = parseCacheUse(_cacheUse, getFullId(id));
 				}
 
-				SelectSetNode selectSetNode = new SelectSetNode(id, ns, getFullId(id), selectResult.resultType, selectResult.resultMap, dsKey,
-						fetchSize, txDef, sqlNode, cacheUse);
+				SelectSetNode selectSetNode = new SelectSetNode(id, ns, getFullId(id), selectResult.resultType, selectResult.resultMap, dsKey, fetchSize, txDef, sqlNode, cacheUse);
 				list.add(selectSetNode);
 			}
 		}
@@ -444,8 +443,7 @@ public class XMLSqlNodeBuilder {
 					cacheUse = parseCacheUse(_cacheUse, getFullId(id));
 				}
 
-				SelectOneNode selectOneNode = new SelectOneNode(id, ns, getFullId(id), selectResult.resultType, selectResult.resultMap, dsKey, txDef,
-						sqlNode, cacheUse);
+				SelectOneNode selectOneNode = new SelectOneNode(id, ns, getFullId(id), selectResult.resultType, selectResult.resultMap, dsKey, txDef, sqlNode, cacheUse);
 				list.add(selectOneNode);
 			}
 		}
@@ -657,8 +655,7 @@ public class XMLSqlNodeBuilder {
 
 			SqlNode sqlNode = parseNode(context, true);
 			if (null != sqlNode) {
-				ServiceNode serviceNode = new ServiceNode(id, txRef, getFullId(id), dsKey, txDef, sqlNode, cacheUse, cacheClean,
-						this.serviceResultType);
+				ServiceNode serviceNode = new ServiceNode(id, txRef, getFullId(id), dsKey, txDef, sqlNode, cacheUse, cacheClean, this.serviceResultType);
 				list.add(serviceNode);
 			}
 		}
