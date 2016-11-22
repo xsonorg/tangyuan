@@ -27,6 +27,9 @@ public class ScheduledCache extends AbstractCache {
 		return delegate.getSize();
 	}
 
+	/**
+	 * time: 超时时间, 单位秒
+	 */
 	@Override
 	public void putObject(Object key, Object value, Integer time) {
 		int survivalTime = this.defaultSurvivalTime;

@@ -10,7 +10,10 @@ public class HashShardingHandler extends AbstractShardingHandler {
 		if (null == keywords) {
 			keywords = defVo.getKeywords();
 		}
-		int hashCode = getHashCode(keywords[0], arg);
+		// int hashCode = getHashCode(keywords[0], arg);
+		// fix bug -x
+		int hashCode = Math.abs(getHashCode(keywords[0], arg));
+
 		// 按照Hash划分, 1.hash mod dbCount, 2, hash mode talbeCount
 		long tableIndex = hashCode % defVo.getTableCount();
 		long dbIndex = hashCode % defVo.getDbCount();

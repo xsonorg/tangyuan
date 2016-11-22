@@ -6,7 +6,7 @@ import java.util.Map;
 
 import org.xson.tangyuan.TangYuanContainer;
 import org.xson.tangyuan.datasource.DataSourceManager;
-import org.xson.tangyuan.executor.SqlServiceContext;
+import org.xson.tangyuan.executor.ServiceContext;
 import org.xson.tangyuan.logging.Log;
 import org.xson.tangyuan.logging.LogFactory;
 import org.xson.tangyuan.transaction.XConnection.ConnectionState;
@@ -223,7 +223,7 @@ public class DefaultTransactionManager implements XTransactionManager {
 	/**
 	 * confirm:是否确认提交 false:自动判断是否需要提交(只提交单独的事务), true:立即提交
 	 */
-	public XTransactionStatus commit(XTransactionStatus status, boolean confirm, SqlServiceContext context) throws SQLException {
+	public XTransactionStatus commit(XTransactionStatus status, boolean confirm, ServiceContext context) throws SQLException {
 
 		if (!confirm && !status.newTransaction) {
 			// 不确定提交, 不是一个非独立的事务, 暂时不提交

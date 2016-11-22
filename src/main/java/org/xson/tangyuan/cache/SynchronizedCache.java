@@ -14,9 +14,14 @@ public class SynchronizedCache extends AbstractCache {
 		this.lock = new ReentrantReadWriteLock();
 	}
 
+	// @Override
+	// public void start(Map<String, String> properties) {
+	// this.cache.start(properties);
+	// }
+
 	@Override
-	public void start(Map<String, String> properties) {
-		this.cache.start(properties);
+	public void start(String resource, Map<String, String> properties) {
+		this.cache.start(resource, properties);
 	}
 
 	@Override
@@ -26,14 +31,14 @@ public class SynchronizedCache extends AbstractCache {
 
 	@Override
 	public String getId() {
-		return null;
+		return cache.getId();
 	}
 
 	@Override
 	public void putObject(Object key, Object value, Integer time) {
 		this.lock.writeLock().lock();
 		try {
-			cache.putObject(key, value);
+			cache.putObject(key, value, time);
 		} finally {
 			this.lock.writeLock().unlock();
 		}

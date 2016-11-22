@@ -4,13 +4,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * 顶层Cache
+ * 底层Cache
  */
 public class LocalCache extends AbstractCache {
 
 	private String				id;
 
-	private Map<Object, Object>	cache	= new HashMap<Object, Object>();
+	private Map<Object, Object>	cache	= new HashMap<Object, Object>(1024);
 
 	public LocalCache(String id) {
 		this.id = id;

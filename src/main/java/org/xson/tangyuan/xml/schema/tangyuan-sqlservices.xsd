@@ -70,6 +70,7 @@
 			</xs:sequence>
 			<xs:attribute name="id" type="xs:string"/>
 			<xs:attribute name="dsKey" type="xs:string"/>
+			<xs:attribute name="resultKey" type="xs:string"/>
 			<xs:attribute name="txRef" type="xs:string"/>
 			<xs:attribute name="cacheUse" type="xs:string"/>
 		</xs:complexType>
@@ -91,7 +92,7 @@
 			<xs:attribute name="incrementKey" type="xs:string"/>
 			<xs:attribute name="dsKey" type="xs:string"/>
 			<xs:attribute name="txRef" type="xs:string"/>
-			<xs:attribute name="cacheClear" type="xs:string"/>
+			<xs:attribute name="cacheClean" type="xs:string"/>
 		</xs:complexType>
 	</xs:element>
 	<xs:element name="update">
@@ -109,7 +110,7 @@
 			<xs:attribute name="rowCount" type="xs:string"/>
 			<xs:attribute name="dsKey" type="xs:string"/>
 			<xs:attribute name="txRef" type="xs:string"/>
-			<xs:attribute name="cacheClear" type="xs:string"/>
+			<xs:attribute name="cacheClean" type="xs:string"/>
 		</xs:complexType>
 	</xs:element>
 	<xs:element name="delete">
@@ -127,7 +128,7 @@
 			<xs:attribute name="rowCount" type="xs:string"/>
 			<xs:attribute name="dsKey" type="xs:string"/>
 			<xs:attribute name="txRef" type="xs:string"/>
-			<xs:attribute name="cacheClear" type="xs:string"/>
+			<xs:attribute name="cacheClean" type="xs:string"/>
 		</xs:complexType>
 	</xs:element>
 	<xs:element name="sql-service">
@@ -157,7 +158,7 @@
 			<xs:attribute name="dsKey" type="xs:string"/>
 			<xs:attribute name="txRef" type="xs:string"/>
 			<xs:attribute name="cacheUse" type="xs:string"/>
-			<xs:attribute name="cacheClear" type="xs:string"/>
+			<xs:attribute name="cacheClean" type="xs:string"/>
 		</xs:complexType>
 	</xs:element>
 	<xs:element name="setvar">

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.xson.tangyuan.TangYuanContainer;
-import org.xson.tangyuan.executor.SqlServiceContext;
+import org.xson.tangyuan.executor.ServiceContext;
 import org.xson.tangyuan.ognl.vars.VariableParser;
 import org.xson.tangyuan.ognl.vars.VariableVo;
 import org.xson.tangyuan.sharding.ShardingArgVo;
@@ -103,12 +103,12 @@ public abstract class TextNode implements SqlNode {
 
 	protected class ShardingProcessTokenHandler implements TokenHandler {
 
-		private SqlServiceContext	context;
+		private ServiceContext	context;
 		// private Map<String, Object> arg;
 		private Object				arg;
 		private int					index	= 0;
 
-		protected ShardingProcessTokenHandler(SqlServiceContext context, Object arg) {
+		protected ShardingProcessTokenHandler(ServiceContext context, Object arg) {
 			this.context = context;
 			this.arg = arg;
 		}

@@ -72,9 +72,10 @@ public class CacheBase {
 						keyList.add(new CacheKey(3, null));
 						simple = false;
 					} else {
-						throw new CacheException("不支持的表达式标签: ${" + str + "}");
+						throw new CacheException("不合法的表达式标签: ${" + str + "}");
 					}
-					i = position + 1;
+					// i = position + 1;
+					i = position;// fix bug
 				} else {
 					builder.append(k);
 				}
@@ -88,9 +89,12 @@ public class CacheBase {
 					// 找到{}
 					String str = new String(src, i + 1, position - i - 1);
 					// keyList.add(new CacheKey(4, str));
-					keyList.add(new CacheKey(4, VariableParser.parse(str, false)));
+					// keyList.add(new CacheKey(4, VariableParser.parse(str,
+					// false)));
+					keyList.add(new CacheKey(4, VariableParser.parse(str, true)));
 					simple = false;
-					i = position + 1;
+					// i = position + 1;
+					i = position;// fix bug
 				} else {
 					builder.append(k);
 				}

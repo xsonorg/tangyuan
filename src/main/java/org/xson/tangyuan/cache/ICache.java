@@ -4,9 +4,10 @@ import java.util.Map;
 
 public interface ICache {
 
-	void start(Map<String, String> properties);
+	// void start(Map<String, String> properties);
+	// void start(String resource);
 
-	void start(String resource);
+	void start(String resource, Map<String, String> properties);
 
 	void stop();
 

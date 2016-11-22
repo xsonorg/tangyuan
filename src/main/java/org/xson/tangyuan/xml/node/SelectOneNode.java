@@ -4,7 +4,7 @@ import java.util.Map;
 
 import org.xson.common.object.XCO;
 import org.xson.tangyuan.cache.vo.CacheUseVo;
-import org.xson.tangyuan.executor.SqlServiceContext;
+import org.xson.tangyuan.executor.ServiceContext;
 import org.xson.tangyuan.executor.SqlServiceExceptionInfo;
 import org.xson.tangyuan.logging.Log;
 import org.xson.tangyuan.logging.LogFactory;
@@ -40,7 +40,7 @@ public class SelectOneNode extends AbstractSqlNode {
 	}
 
 	@Override
-	public boolean execute(SqlServiceContext context, Object arg) throws Throwable {
+	public boolean execute(ServiceContext context, Object arg) throws Throwable {
 		// 1. cache使用
 		if (null != cacheUse) {
 			Object result = cacheUse.getObject(arg);
@@ -111,7 +111,7 @@ public class SelectOneNode extends AbstractSqlNode {
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public Object getResult(SqlServiceContext context) {
+	public Object getResult(ServiceContext context) {
 		Object value = context.getResult();
 		context.setResult(null);
 		if (null == value) {

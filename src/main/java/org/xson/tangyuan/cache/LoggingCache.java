@@ -18,9 +18,14 @@ public class LoggingCache extends AbstractCache {
 		// this.log = LogFactory.getLog(getId());
 	}
 
+	// @Override
+	// public void start(Map<String, String> properties) {
+	// this.delegate.start(properties);
+	// }
+
 	@Override
-	public void start(Map<String, String> properties) {
-		this.delegate.start(properties);
+	public void start(String resource, Map<String, String> properties) {
+		this.delegate.start(resource, properties);
 	}
 
 	@Override
@@ -45,7 +50,7 @@ public class LoggingCache extends AbstractCache {
 
 	@Override
 	public void putObject(Object key, Object value, Integer time) {
-		delegate.putObject(key, value);
+		delegate.putObject(key, value, time);
 	}
 
 	@Override

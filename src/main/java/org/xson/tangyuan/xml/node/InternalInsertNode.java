@@ -1,7 +1,7 @@
 package org.xson.tangyuan.xml.node;
 
 import org.xson.tangyuan.cache.vo.CacheCleanVo;
-import org.xson.tangyuan.executor.SqlServiceContext;
+import org.xson.tangyuan.executor.ServiceContext;
 import org.xson.tangyuan.logging.Log;
 import org.xson.tangyuan.logging.LogFactory;
 import org.xson.tangyuan.ognl.Ognl;
@@ -30,7 +30,7 @@ public class InternalInsertNode extends AbstractSqlNode {
 	}
 
 	@Override
-	public boolean execute(SqlServiceContext context, Object arg) throws Throwable {
+	public boolean execute(ServiceContext context, Object arg) throws Throwable {
 		context.resetExecEnv();
 
 		sqlNode.execute(context, arg); // 获取sql

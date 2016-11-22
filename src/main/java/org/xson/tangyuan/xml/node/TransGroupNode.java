@@ -2,7 +2,7 @@ package org.xson.tangyuan.xml.node;
 
 import java.sql.SQLException;
 
-import org.xson.tangyuan.executor.SqlServiceContext;
+import org.xson.tangyuan.executor.ServiceContext;
 import org.xson.tangyuan.logging.Log;
 import org.xson.tangyuan.logging.LogFactory;
 import org.xson.tangyuan.transaction.XTransactionDefinition;
@@ -17,7 +17,7 @@ public class TransGroupNode extends AbstractSqlNode {
 	}
 
 	@Override
-	public boolean execute(SqlServiceContext context, Object arg) throws SQLException {
+	public boolean execute(ServiceContext context, Object arg) throws SQLException {
 		try {
 			// 这里只是创建事务
 			context.beforeExecute(this, false);

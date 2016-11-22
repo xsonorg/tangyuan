@@ -3,7 +3,7 @@ package org.xson.tangyuan.xml.node;
 import java.util.Collection;
 
 import org.xson.tangyuan.TangYuanException;
-import org.xson.tangyuan.executor.SqlServiceContext;
+import org.xson.tangyuan.executor.ServiceContext;
 import org.xson.tangyuan.logging.Log;
 import org.xson.tangyuan.logging.LogFactory;
 import org.xson.tangyuan.ognl.Ognl;
@@ -41,7 +41,7 @@ public class ForEachNode implements SqlNode {
 	}
 
 	@Override
-	public boolean execute(SqlServiceContext context, Object arg) throws Throwable {
+	public boolean execute(ServiceContext context, Object arg) throws Throwable {
 		int count = 0;
 		Object obj = collection.getValue(arg);
 		append(context, open);
@@ -84,13 +84,13 @@ public class ForEachNode implements SqlNode {
 		return true;
 	}
 
-	private void append(SqlServiceContext context, String str) {
+	private void append(ServiceContext context, String str) {
 		if (null != str && str.length() > 0) {
 			context.addSql(str);
 		}
 	}
 
-	private int foreachCollection(Object target, SqlServiceContext context, Object arg) throws Throwable {
+	private int foreachCollection(Object target, ServiceContext context, Object arg) throws Throwable {
 		Collection<?> collection = (Collection<?>) target;
 		int count = 0;
 		for (Object item : collection) {
@@ -111,7 +111,7 @@ public class ForEachNode implements SqlNode {
 	 * @param iterate
 	 *            true: 遍历模式
 	 */
-	private int foreachObjectArray(Object target, SqlServiceContext context, Object arg) throws Throwable {
+	private int foreachObjectArray(Object target, ServiceContext context, Object arg) throws Throwable {
 		Object[] array = (Object[]) target;
 		int count = 0;
 		for (int i = 0; i < array.length; i++) {
@@ -125,7 +125,7 @@ public class ForEachNode implements SqlNode {
 		return count;
 	}
 
-	private int foreachIntArray(Object target, SqlServiceContext context, Object arg) throws Throwable {
+	private int foreachIntArray(Object target, ServiceContext context, Object arg) throws Throwable {
 		int[] array = (int[]) target;
 		for (int i = 0; i < array.length; i++) {
 			// arg.put(index, i);
@@ -138,7 +138,7 @@ public class ForEachNode implements SqlNode {
 		return array.length;
 	}
 
-	private int foreachLongArray(Object target, SqlServiceContext context, Object arg) throws Throwable {
+	private int foreachLongArray(Object target, ServiceContext context, Object arg) throws Throwable {
 		long[] array = (long[]) target;
 		for (int i = 0; i < array.length; i++) {
 			// arg.put(index, i);
@@ -151,7 +151,7 @@ public class ForEachNode implements SqlNode {
 		return array.length;
 	}
 
-	private int foreachBooleanArray(Object target, SqlServiceContext context, Object arg) throws Throwable {
+	private int foreachBooleanArray(Object target, ServiceContext context, Object arg) throws Throwable {
 		boolean[] array = (boolean[]) target;
 		for (int i = 0; i < array.length; i++) {
 			// arg.put(index, i);
@@ -164,7 +164,7 @@ public class ForEachNode implements SqlNode {
 		return array.length;
 	}
 
-	private int foreachByteArray(Object target, SqlServiceContext context, Object arg) throws Throwable {
+	private int foreachByteArray(Object target, ServiceContext context, Object arg) throws Throwable {
 		byte[] array = (byte[]) target;
 		for (int i = 0; i < array.length; i++) {
 			// arg.put(index, i);
@@ -177,7 +177,7 @@ public class ForEachNode implements SqlNode {
 		return array.length;
 	}
 
-	private int foreachCharArray(Object target, SqlServiceContext context, Object arg) throws Throwable {
+	private int foreachCharArray(Object target, ServiceContext context, Object arg) throws Throwable {
 		char[] array = (char[]) target;
 		for (int i = 0; i < array.length; i++) {
 			// arg.put(index, i);
@@ -190,7 +190,7 @@ public class ForEachNode implements SqlNode {
 		return array.length;
 	}
 
-	private int foreachDoubleArray(Object target, SqlServiceContext context, Object arg) throws Throwable {
+	private int foreachDoubleArray(Object target, ServiceContext context, Object arg) throws Throwable {
 		double[] array = (double[]) target;
 		for (int i = 0; i < array.length; i++) {
 			// arg.put(index, i);
@@ -203,7 +203,7 @@ public class ForEachNode implements SqlNode {
 		return array.length;
 	}
 
-	private int foreachFloatArray(Object target, SqlServiceContext context, Object arg) throws Throwable {
+	private int foreachFloatArray(Object target, ServiceContext context, Object arg) throws Throwable {
 		float[] array = (float[]) target;
 		for (int i = 0; i < array.length; i++) {
 			Ognl.setValue(arg, index, i);
@@ -215,7 +215,7 @@ public class ForEachNode implements SqlNode {
 		return array.length;
 	}
 
-	private int foreachShortArray(Object target, SqlServiceContext context, Object arg) throws Throwable {
+	private int foreachShortArray(Object target, ServiceContext context, Object arg) throws Throwable {
 		short[] array = (short[]) target;
 		for (int i = 0; i < array.length; i++) {
 			Ognl.setValue(arg, index, i);

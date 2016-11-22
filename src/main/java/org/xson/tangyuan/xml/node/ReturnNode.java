@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.xson.common.object.XCO;
-import org.xson.tangyuan.executor.SqlServiceContext;
+import org.xson.tangyuan.executor.ServiceContext;
 import org.xson.tangyuan.ognl.vars.VariableVo;
 
 public class ReturnNode implements SqlNode {
@@ -40,7 +40,7 @@ public class ReturnNode implements SqlNode {
 	}
 
 	@Override
-	public boolean execute(SqlServiceContext context, Object arg) {
+	public boolean execute(ServiceContext context, Object arg) {
 		// if (Map.class == context.getResultType(resultType)) {
 		// if (null == resultValue) {
 		// Map<String, Object> map = new HashMap<String, Object>();

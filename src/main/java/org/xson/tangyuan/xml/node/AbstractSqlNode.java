@@ -1,6 +1,6 @@
 package org.xson.tangyuan.xml.node;
 
-import org.xson.tangyuan.executor.SqlServiceContext;
+import org.xson.tangyuan.executor.ServiceContext;
 import org.xson.tangyuan.transaction.XTransactionDefinition;
 
 public abstract class AbstractSqlNode implements SqlNode {
@@ -62,7 +62,7 @@ public abstract class AbstractSqlNode implements SqlNode {
 	/**
 	 * 获取返回对象
 	 */
-	public Object getResult(SqlServiceContext context) {
+	public Object getResult(ServiceContext context) {
 		Object result = context.getResult();
 		context.setResult(null);// 清理
 		return result;

@@ -1,6 +1,6 @@
 package org.xson.tangyuan.xml.node;
 
-import org.xson.tangyuan.executor.SqlServiceContext;
+import org.xson.tangyuan.executor.ServiceContext;
 import org.xson.tangyuan.ognl.Ognl;
 
 public class SetVarNode implements SqlNode {
@@ -19,7 +19,7 @@ public class SetVarNode implements SqlNode {
 	}
 
 	@Override
-	public boolean execute(SqlServiceContext context, Object arg) {
+	public boolean execute(ServiceContext context, Object arg) {
 		if (constant) {
 			// arg.put(key, value);
 			Ognl.setValue(arg, key, value);

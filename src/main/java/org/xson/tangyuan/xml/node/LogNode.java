@@ -2,7 +2,7 @@ package org.xson.tangyuan.xml.node;
 
 import java.util.List;
 
-import org.xson.tangyuan.executor.SqlServiceContext;
+import org.xson.tangyuan.executor.ServiceContext;
 import org.xson.tangyuan.logging.Log;
 import org.xson.tangyuan.logging.LogFactory;
 import org.xson.tangyuan.ognl.vars.VariableVo;
@@ -36,7 +36,7 @@ public class LogNode implements SqlNode {
 	}
 
 	@Override
-	public boolean execute(SqlServiceContext context, Object arg) {
+	public boolean execute(ServiceContext context, Object arg) {
 		String parsedText = this.originalText;
 		if (null != logUnits) {
 			StringBuilder builder = new StringBuilder();

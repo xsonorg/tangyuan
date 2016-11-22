@@ -3,7 +3,7 @@ package org.xson.tangyuan.executor;
 import org.xson.tangyuan.TangYuanContainer;
 import org.xson.tangyuan.TangYuanException;
 
-public class SqlServiceException extends TangYuanException {
+public class ServiceException extends TangYuanException {
 
 	private static final long	serialVersionUID	= 7857190361062588205L;
 
@@ -46,29 +46,29 @@ public class SqlServiceException extends TangYuanException {
 
 	private String				errorMessage		= TangYuanContainer.getInstance().getSqlServiceErrorMessage();
 
-	public SqlServiceException() {
+	public ServiceException() {
 		super();
 	}
 
-	public SqlServiceException(String message) {
+	public ServiceException(String message) {
 		super(message);
 	}
 
-	public SqlServiceException(String message, Throwable cause) {
+	public ServiceException(String message, Throwable cause) {
 		super(message, cause);
 	}
 
-	public SqlServiceException(Throwable cause) {
+	public ServiceException(Throwable cause) {
 		super(cause);
 	}
 
-	public SqlServiceException(int errorCode, String errorMessage) {
+	public ServiceException(int errorCode, String errorMessage) {
 		super(errorMessage);
 		this.errorCode = errorCode;
 		this.errorMessage = errorMessage;
 	}
 
-	public SqlServiceException(int errorCode, String errorMessage, Throwable cause) {
+	public ServiceException(int errorCode, String errorMessage, Throwable cause) {
 		super(errorMessage, cause);
 		this.errorCode = errorCode;
 		this.errorMessage = errorMessage;

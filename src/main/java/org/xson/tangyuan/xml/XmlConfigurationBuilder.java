@@ -73,6 +73,7 @@ public class XmlConfigurationBuilder {
 			buildCache(context.evalNodes("cache")); // 解析缓存定义
 			buildCacheGroup(context.evalNodes("cacheGroup")); // 解析缓存组定义
 			setDefaultCache();
+			startCache();// TODO: 需要启动Cache
 
 			buildMapperNodes(context.evalNodes("mapper"));
 			buildShardingNodes(context.evalNodes("sharding"));
@@ -105,7 +106,8 @@ public class XmlConfigurationBuilder {
 		int size = contexts.size();
 		for (int i = 0; i < size; i++) {
 			XmlNodeWrapper xNode = contexts.get(i);
-			String id = StringUtils.trim(xNode.getStringAttribute("id"));// xml validation
+			String id = StringUtils.trim(xNode.getStringAttribute("id"));// xml
+																			// validation
 			if (cacheVoMap.containsKey(id)) {
 				throw new XmlParseException("重复的cache:" + id);
 			}
@@ -165,7 +167,8 @@ public class XmlConfigurationBuilder {
 		int size = contexts.size();
 		for (int i = 0; i < size; i++) {
 			XmlNodeWrapper xNode = contexts.get(i);
-			String id = StringUtils.trim(xNode.getStringAttribute("id"));// xml validation
+			String id = StringUtils.trim(xNode.getStringAttribute("id"));// xml
+																			// validation
 			if (cacheVoMap.containsKey(id)) {
 				throw new XmlParseException("重复的cache:" + id);
 			}
@@ -189,11 +192,11 @@ public class XmlConfigurationBuilder {
 					throw new XmlParseException("cache引用无效: " + _ref);
 				}
 				String[] include = null;
-				if (null != _include) {
+				if (null != _include && _include.trim().length() > 0) {
 					include = _include.split(",");
 				}
 				String[] exclude = null;
-				if (null != _exclude) {
+				if (null != _exclude && _exclude.trim().length() > 0) {
 					exclude = _exclude.split(",");
 				}
 				CacheRefVo refVo = new CacheRefVo(cacheVo, include, exclude);
@@ -218,8 +221,18 @@ public class XmlConfigurationBuilder {
 		if (1 == cacheVoMap.size()) {
 			for (Map.Entry<String, CacheVo> entry : cacheVoMap.entrySet()) {
 				entry.getValue().setDefaultCache(true);
+				// 设置默认的cache defaultCacheVo
+				this.defaultCacheVo = entry.getValue();
 				return;
 			}
+		}
+	}
+
+	/** 启动Cache */
+	private void startCache() {
+		for (Map.Entry<String, CacheVo> entry : cacheVoMap.entrySet()) {
+			entry.getValue().start();
+			log.info("cache start: " + entry.getValue().getId());
 		}
 	}
 
@@ -293,17 +306,20 @@ public class XmlConfigurationBuilder {
 			if (dataSourceVoMap.containsKey(id)) {
 				throw new XmlParseException("重复的数据源ID:" + id);
 			}
-			String tmp = StringUtils.trim(xNode.getStringAttribute("type")); // xml validation
+			String tmp = StringUtils.trim(xNode.getStringAttribute("type")); // xml
+																				// validation
 			ConnPoolType type = getConnPoolType(tmp);
 			if (null == type) {
 				throw new XmlParseException("无效的数据源类型");
 			}
-			tmp = StringUtils.trim(xNode.getStringAttribute("start")); // xml validation
+			tmp = StringUtils.trim(xNode.getStringAttribute("start")); // xml
+																		// validation
 			int start = 0;
 			if (null != tmp) {
 				start = Integer.parseInt(tmp);
 			}
-			tmp = StringUtils.trim(xNode.getStringAttribute("end")); // xml validation
+			tmp = StringUtils.trim(xNode.getStringAttribute("end")); // xml
+																		// validation
 			int end = Integer.parseInt(tmp);
 			boolean defaultDs = false;
 			tmp = StringUtils.trim(xNode.getStringAttribute("isDefault"));
@@ -445,7 +461,8 @@ public class XmlConfigurationBuilder {
 			throw new XmlParseException("mapper只能有一项");
 		}
 		XmlNodeWrapper xNode = contexts.get(0);
-		String resource = StringUtils.trim(xNode.getStringAttribute("resource")); // xml v
+		String resource = StringUtils.trim(xNode.getStringAttribute("resource")); // xml
+																					// v
 		log.info("Start parsing: " + resource);
 		InputStream inputStream = Resources.getResourceAsStream(resource);
 		xmlMapperBuilder = new XmlMapperBuilder(inputStream);
@@ -464,7 +481,8 @@ public class XmlConfigurationBuilder {
 			throw new XmlParseException("sharding只能有一项");
 		}
 		XmlNodeWrapper xNode = contexts.get(0);
-		String resource = StringUtils.trim(xNode.getStringAttribute("resource")); // xml v
+		String resource = StringUtils.trim(xNode.getStringAttribute("resource")); // xml
+																					// v
 		log.info("Start parsing: " + resource);
 		InputStream inputStream = Resources.getResourceAsStream(resource);
 		xmlShardingBuilder = new XmlShardingBuilder(inputStream, dataSourceVoMap);
@@ -486,7 +504,8 @@ public class XmlConfigurationBuilder {
 		// 扫描所有的<SQL>
 		for (int i = 0; i < size; i++) {
 			XmlNodeWrapper xNode = contexts.get(i);
-			String resource = StringUtils.trim(xNode.getStringAttribute("resource")); // xml v
+			String resource = StringUtils.trim(xNode.getStringAttribute("resource")); // xml
+																						// v
 			log.info("Start parsing: " + resource);
 			InputStream inputStream = Resources.getResourceAsStream(resource);
 			XMLSqlNodeBuilder xmlSqlNodeBuilder = new XMLSqlNodeBuilder(inputStream, this, xmlMapperBuilder, integralRefMap, integralServiceMap);

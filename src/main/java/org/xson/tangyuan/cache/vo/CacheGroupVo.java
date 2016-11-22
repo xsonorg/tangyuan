@@ -2,6 +2,8 @@ package org.xson.tangyuan.cache.vo;
 
 import java.util.List;
 
+import org.xson.tangyuan.util.PatternMatchUtils;
+
 public class CacheGroupVo extends CacheVo {
 
 	private List<CacheRefVo>	cacheRefList;
@@ -82,12 +84,12 @@ public class CacheGroupVo extends CacheVo {
 	}
 
 	private boolean match(String[] array, String item) {
-		for (int i = 0; i < array.length; i++) {
-			// TODO 正则表达式
-		}
-		return false;
+		// for (int i = 0; i < array.length; i++) {
+		// }
+		return PatternMatchUtils.simpleMatch(array, item);
 	}
 
 	public void start() {
+		// TODO: 这里不需要执行, 应为其包含的cache已经启动了
 	}
 }

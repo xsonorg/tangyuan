@@ -3,7 +3,7 @@ package org.xson.tangyuan.xml.node;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.xson.tangyuan.executor.SqlServiceContext;
+import org.xson.tangyuan.executor.ServiceContext;
 import org.xson.tangyuan.ognl.expr.ExprGroupVo;
 import org.xson.tangyuan.xml.XmlParseException;
 
@@ -48,7 +48,7 @@ public class IfNode implements SqlNode {
 	 * true: 代表执行了(表达式通过), false: 代表不能执行(表达式不通过)
 	 */
 	@Override
-	public boolean execute(SqlServiceContext context, Object arg) throws Throwable {
+	public boolean execute(ServiceContext context, Object arg) throws Throwable {
 		// 这里可以认识全部是IF, 表达式通过:true, 否则:false
 		if (null == test || test.getResult(arg)) {
 			sqlNode.execute(context, arg);

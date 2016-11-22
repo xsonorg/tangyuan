@@ -2,7 +2,7 @@ package org.xson.tangyuan.xml.node;
 
 import java.sql.SQLException;
 
-import org.xson.tangyuan.executor.SqlServiceContext;
+import org.xson.tangyuan.executor.ServiceContext;
 
 /**
  * 内部的ProcedureNode
@@ -15,7 +15,7 @@ public class InternalProcedureNode extends AbstractSqlNode {
 	}
 
 	@Override
-	public boolean execute(SqlServiceContext context, Object arg) throws SQLException {
+	public boolean execute(ServiceContext context, Object arg) throws SQLException {
 		return true;
 	}
 

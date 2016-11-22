@@ -2,7 +2,7 @@ package org.xson.tangyuan.xml.node;
 
 import java.sql.SQLException;
 
-import org.xson.tangyuan.executor.SqlServiceContext;
+import org.xson.tangyuan.executor.ServiceContext;
 
 public interface SqlNode {
 
@@ -16,6 +16,6 @@ public interface SqlNode {
 	 * @throws SQLException
 	 */
 	// boolean execute(SqlServiceContext context, Object arg) throws SQLException;
-	boolean execute(SqlServiceContext context, Object arg) throws Throwable;
+	boolean execute(ServiceContext context, Object arg) throws Throwable;
 
 }

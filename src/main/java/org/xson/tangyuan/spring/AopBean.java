@@ -1,18 +1,18 @@
 package org.xson.tangyuan.spring;
 
-import org.xson.tangyuan.executor.SqlServiceActuator;
+import org.xson.tangyuan.executor.ServiceActuator;
 
 public class AopBean {
 
 	public void before() {
-		SqlServiceActuator.begin();
+		ServiceActuator.begin();
 	}
 
 	public void after() {
-		SqlServiceActuator.end();
+		ServiceActuator.end();
 	}
 
 	public void onException(Throwable e) throws Throwable {
-		SqlServiceActuator.onException(e);
+		ServiceActuator.onException(e);
 	}
 }

@@ -53,6 +53,11 @@ public class MappingVo {
 		if (null == property && null != handler) {
 			property = handler.columnToProperty(column);
 		}
+
+		if (null == property) {
+			return column;
+		}
+
 		return property;
 	}
 

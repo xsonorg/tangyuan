@@ -3,6 +3,7 @@ package org.xson.tangyuan.cache;
 import java.util.Date;
 import java.util.Map;
 
+import org.xson.tangyuan.TangYuanException;
 import org.xson.tangyuan.util.PropertyUtils;
 
 import com.whalin.MemCached.MemCachedClient;
@@ -14,17 +15,23 @@ public class MemcachedCache extends AbstractCache {
 	private SockIOPool		pool			= null;
 
 	@Override
-	public void start(Map<String, String> properties) {
+	public void start(String resource, Map<String, String> properties) {
 		if (null != cachedClient || null != pool) {
 			return;
 		}
 
 		// { "cache0.server.com:12345", "cache1.server.com:12345" };
 		String _serverlist = properties.get("serverlist");
+		if (null == _serverlist) {
+			throw new TangYuanException("Memcached miss property 'serverlist'");
+		}
 		String[] serverlist = _serverlist.split(",");
 
 		// { new Integer(5), new Integer(2) };
 		String _weights = properties.get("weights");
+		if (null == _weights) {
+			throw new TangYuanException("Memcached miss property 'weights'");
+		}
 		String[] array = _weights.split(",");
 		Integer[] weights = new Integer[array.length];
 		for (int i = 0; i < array.length; i++) {
@@ -34,17 +41,24 @@ public class MemcachedCache extends AbstractCache {
 		int initialConnections = PropertyUtils.getIntValue(properties, "initialConnections", 10);
 		int minSpareConnections = PropertyUtils.getIntValue(properties, "minSpareConnections", 5);
 		int maxSpareConnections = PropertyUtils.getIntValue(properties, "maxSpareConnections", 50);
-		int maxIdleTime = PropertyUtils.getIntValue(properties, "maxIdleTime", 1000 * 60 * 30); // 30 minutes
-		long maxBusyTime = PropertyUtils.getLongValue(properties, "maxIdleTime", 1000 * 60 * 5); // 5 minutes
-		long maintThreadSleep = PropertyUtils.getLongValue(properties, "maxIdleTime", 1000 * 5); // 5 seconds
-		int socketTimeOut = PropertyUtils.getIntValue(properties, "socketTimeOut", 1000 * 60 * 1000 * 3); // 3 seconds to block on reads
-		int socketConnectTO = PropertyUtils.getIntValue(properties, "socketConnectTO", 1000 * 60 * 1000 * 3); // 3 seconds to block on initial
-																												// connections. If 0, then will use
-																												// blocking connect (default)
-		boolean failover = PropertyUtils.getBooleanValue(properties, "failover", false); // turn off auto-failover in event of server down
+		// 30 minutes
+		int maxIdleTime = PropertyUtils.getIntValue(properties, "maxIdleTime", 1000 * 60 * 30);
+		// 5 minutes
+		long maxBusyTime = PropertyUtils.getLongValue(properties, "maxIdleTime", 1000 * 60 * 5);
+		// 5 seconds
+		long maintThreadSleep = PropertyUtils.getLongValue(properties, "maxIdleTime", 1000 * 5);
+		// 3 seconds to block on reads
+		int socketTimeOut = PropertyUtils.getIntValue(properties, "socketTimeOut", 1000 * 60 * 1000 * 3);
+		// 3 seconds to block on initial connections. If 0, then will use
+		// blocking connect (default)
+		int socketConnectTO = PropertyUtils.getIntValue(properties, "socketConnectTO", 1000 * 60 * 1000 * 3);
+		// turn off Nagle's algorithm on all sockets in pool
+		boolean failover = PropertyUtils.getBooleanValue(properties, "failover", false);
 		boolean failback = PropertyUtils.getBooleanValue(properties, "failback", false);
-		boolean nagleAlg = PropertyUtils.getBooleanValue(properties, "nagleAlg", false); // turn off Nagle's algorithm on all sockets in pool
-		boolean aliveCheck = PropertyUtils.getBooleanValue(properties, "aliveCheck", false); // disable health check of socket on checkout
+		// turn off Nagle's algorithm on all sockets in pool
+		boolean nagleAlg = PropertyUtils.getBooleanValue(properties, "nagleAlg", false);
+		// disable health check of socket on checkout
+		boolean aliveCheck = PropertyUtils.getBooleanValue(properties, "aliveCheck", false);
 
 		SockIOPool pool = SockIOPool.getInstance();
 		pool.setServers(serverlist);
@@ -87,25 +101,23 @@ public class MemcachedCache extends AbstractCache {
 	public void putObject(Object key, Object value, Integer time) {
 		Date expiry = null;
 		if (null == time) {
-			expiry = new Date(1 * 60 * 1000);
-			cachedClient.set((String) key, value);
+			cachedClient.set(parseKey(key), value);
 		} else {
-			expiry = new Date(time.intValue());
-			cachedClient.set((String) key, value, expiry);
+			expiry = new Date(time.intValue() * 1000L);
+			cachedClient.set(parseKey(key), value, expiry);
 		}
-		// TODO 后续需要对value做序列号
 	}
 
 	@Override
 	public Object getObject(Object key) {
-		return cachedClient.get((String) key);
+		return cachedClient.get(parseKey(key));
 	}
 
 	@Override
 	public Object removeObject(Object key) {
 		Object result = getObject(key);
 		if (null != result) {
-			cachedClient.delete((String) key);
+			cachedClient.delete(parseKey(key));
 		}
 		return result;
 	}
@@ -114,5 +126,12 @@ public class MemcachedCache extends AbstractCache {
 	public void clear() {
 		cachedClient.flushAll();
 	}
+
+	// private String parseKey(Object key) {
+	// if (key instanceof String) {
+	// return (String) key;
+	// }
+	// throw new CacheException("Illegal cache key: " + key);
+	// }
 
 }

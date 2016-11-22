@@ -11,7 +11,7 @@ public class CacheVo {
 	}
 
 	public enum CacheStrategyType {
-		LRU, FIFO, SOFT, WEAK
+		LRU, FIFO, SOFT, WEAK, TIME
 	}
 
 	protected String			id;
@@ -89,9 +89,13 @@ public class CacheVo {
 
 	public void start() {
 		if (null != cache) {
-			cache.start(properties);
+			cache.start(resource, properties);
 		} else {
 			cache = new CacheCreater().newInstance(this);
+		}
+		if (null != properties) {
+			properties.clear();
+			properties = null;
 		}
 	}
 }

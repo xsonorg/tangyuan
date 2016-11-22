@@ -6,15 +6,19 @@ import java.util.List;
 import java.util.Map;
 
 import org.xson.tangyuan.TangYuanContainer;
+import org.xson.tangyuan.TangYuanException;
 import org.xson.tangyuan.logging.Log;
 import org.xson.tangyuan.logging.LogFactory;
 import org.xson.tangyuan.mapping.MappingHandler;
 import org.xson.tangyuan.mapping.MappingVo;
 import org.xson.tangyuan.type.BigDecimalTypeHandler;
+import org.xson.tangyuan.type.BigIntegerTypeHandler;
+import org.xson.tangyuan.type.BooleanTypeHandler;
 import org.xson.tangyuan.type.ByteTypeHandler;
 import org.xson.tangyuan.type.DoubleTypeHandler;
 import org.xson.tangyuan.type.FloatTypeHandler;
 import org.xson.tangyuan.type.IntegerTypeHandler;
+import org.xson.tangyuan.type.LongTypeHandler;
 import org.xson.tangyuan.type.ShortTypeHandler;
 import org.xson.tangyuan.type.TypeHandler;
 import org.xson.tangyuan.type.TypeHandlerRegistry;
@@ -27,7 +31,6 @@ public class XmlMapperBuilder {
 	private XPathParser					xPathParser		= null;
 	private Map<String, MappingHandler>	mappingClassMap	= new HashMap<String, MappingHandler>();
 	private Map<String, MappingVo>		mappingVoMap	= new HashMap<String, MappingVo>();
-	// private boolean licenses = true;
 
 	public XmlMapperBuilder(InputStream inputStream) {
 		this.xPathParser = new XPathParser(inputStream);
@@ -50,19 +53,22 @@ public class XmlMapperBuilder {
 	private void buildDataTypeMappingNodes(List<XmlNodeWrapper> contexts) {
 		int size = contexts.size();
 		if (size > 1) {
-			throw new XmlParseException("dataTypeMapping只能有一项");
+			throw new XmlParseException("dataTypeMapping can have at most one entry");
 		}
 		Map<String, TypeHandler<?>> jdbcTypeMap = new HashMap<String, TypeHandler<?>>();
 		if (size == 1) {
 			List<XmlNodeWrapper> relations = contexts.get(0).evalNodes("relation");
 			for (XmlNodeWrapper node : relations) {
-				String jdbcType = StringUtils.trim(node.getStringAttribute("jdbcType")); // XML v
-				String javaType = StringUtils.trim(node.getStringAttribute("javaType")); // XML v
-				// jdbcTypeMap.put(jdbcType.toLowerCase(), getJdbcTypeHandler(javaType));
+				String jdbcType = StringUtils.trim(node.getStringAttribute("jdbcType")); // XMLV
+				String javaType = StringUtils.trim(node.getStringAttribute("javaType")); // XMLV
+				if (null == jdbcType || null == javaType) {
+					throw new XmlParseException("jdbcType or javaType is null");
+				}
 				jdbcTypeMap.put(jdbcType.toUpperCase(), getJdbcTypeHandler(javaType));
-				log.info("add datatype relation: " + jdbcType + "---" + javaType);
+				log.info("add database type mapping: " + jdbcType.toLowerCase() + " TO " + javaType.toLowerCase());
 			}
 		}
+
 		TypeHandlerRegistry typeHandlerRegistry = new TypeHandlerRegistry();
 		typeHandlerRegistry.init(jdbcTypeMap);
 		TangYuanContainer.getInstance().setTypeHandlerRegistry(typeHandlerRegistry);
@@ -72,7 +78,8 @@ public class XmlMapperBuilder {
 		int size = contexts.size();
 		for (int i = 0; i < size; i++) {
 			XmlNodeWrapper xNode = contexts.get(i);
-			// <mappingClass id="default_bean_mapping" class="org.xson.tangyuan.mapping.DefaultMappingHandler"/>
+			// <mappingClass id="default_bean_mapping"
+			// class="org.xson.tangyuan.mapping.DefaultMappingHandler"/>
 			String id = StringUtils.trim(xNode.getStringAttribute("id"));
 			if (null != mappingClassMap.get(id)) {
 				throw new XmlParseException("重复的mappingClass:" + id);
@@ -92,7 +99,7 @@ public class XmlMapperBuilder {
 		int size = contexts.size();
 		for (int i = 0; i < size; i++) {
 			XmlNodeWrapper xNode = contexts.get(i);
-			String id = StringUtils.trim(xNode.getStringAttribute("id"));// xml validation
+			String id = StringUtils.trim(xNode.getStringAttribute("id"));// xmlV
 			if (mappingVoMap.containsKey(id)) {
 				throw new XmlParseException("重复的mapping:" + id);
 			}
@@ -117,7 +124,7 @@ public class XmlMapperBuilder {
 			}
 
 			if (null == handler && 0 == columnMap.size()) {
-				throw new XmlParseException("handler和columnMap 不能都为空");
+				throw new XmlParseException("handler和columnMap 不能都为空:" + id);
 			}
 
 			MappingVo mVo = new MappingVo(id, type, beanClass, handler, columnMap);
@@ -129,18 +136,24 @@ public class XmlMapperBuilder {
 	private TypeHandler<?> getJdbcTypeHandler(String str) {
 		if ("byte".equalsIgnoreCase(str)) {
 			return ByteTypeHandler.instance;
+		} else if ("boolean".equalsIgnoreCase(str)) {
+			return BooleanTypeHandler.instance;
 		} else if ("short".equalsIgnoreCase(str)) {
 			return ShortTypeHandler.instance;
 		} else if ("int".equalsIgnoreCase(str)) {
 			return IntegerTypeHandler.instance;
+		} else if ("long".equalsIgnoreCase(str)) {
+			return LongTypeHandler.instance;
 		} else if ("float".equalsIgnoreCase(str)) {
 			return FloatTypeHandler.instance;
 		} else if ("double".equalsIgnoreCase(str)) {
 			return DoubleTypeHandler.instance;
+		} else if ("bigInteger".equalsIgnoreCase(str)) {
+			return BigIntegerTypeHandler.instance;
 		} else if ("bigDecimal".equalsIgnoreCase(str)) {
 			return BigDecimalTypeHandler.instance;
 		}
-		return null;
+		throw new TangYuanException("Unsupported JdbcType: " + str);
 	}
 
 	public Map<String, MappingVo> getMappingVoMap() {

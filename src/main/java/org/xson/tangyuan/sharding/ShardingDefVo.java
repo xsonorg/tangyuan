@@ -61,11 +61,11 @@ public class ShardingDefVo {
 		return dbCount;
 	}
 
-	protected int getTableCount() {
+	public int getTableCount() {
 		return tableCount;
 	}
 
-	protected int getTableCapacity() {
+	public int getTableCapacity() {
 		return tableCapacity;
 	}
 
@@ -77,7 +77,7 @@ public class ShardingDefVo {
 		return handler;
 	}
 
-	protected boolean isTableNameIndexIncrement() {
+	public boolean isTableNameIndexIncrement() {
 		return tableNameIndexIncrement;
 	}
 

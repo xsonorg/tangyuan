@@ -1,7 +1,7 @@
 package org.xson.tangyuan.xml.node;
 
 import org.xson.tangyuan.cache.vo.CacheCleanVo;
-import org.xson.tangyuan.executor.SqlServiceContext;
+import org.xson.tangyuan.executor.ServiceContext;
 import org.xson.tangyuan.executor.SqlServiceExceptionInfo;
 import org.xson.tangyuan.logging.Log;
 import org.xson.tangyuan.logging.LogFactory;
@@ -25,7 +25,7 @@ public class DeleteNode extends AbstractSqlNode {
 	}
 
 	@Override
-	public boolean execute(SqlServiceContext context, Object arg) throws Throwable {
+	public boolean execute(ServiceContext context, Object arg) throws Throwable {
 		// 2. 清理和重置执行环境
 		context.resetExecEnv();
 

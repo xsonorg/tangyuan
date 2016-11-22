@@ -1,6 +1,6 @@
 package org.xson.tangyuan.xml.node;
 
-import org.xson.tangyuan.executor.SqlServiceContext;
+import org.xson.tangyuan.executor.ServiceContext;
 import org.xson.tangyuan.xml.parsing.GenericTokenParser;
 
 public class StaticTextNode extends TextNode {
@@ -11,7 +11,7 @@ public class StaticTextNode extends TextNode {
 	}
 
 	@Override
-	public boolean execute(SqlServiceContext context, Object arg) {
+	public boolean execute(ServiceContext context, Object arg) {
 		String sql = this.parsedText;
 		// 先处理分库分表
 		if (null != this.shardingArgList) {

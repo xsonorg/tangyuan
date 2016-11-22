@@ -7,7 +7,7 @@ import java.sql.SQLException;
 
 public class EnumTypeHandler<E extends Enum<E>> extends BaseTypeHandler<E> {
 
-	private Class<E> type;
+	private Class<E>	type;
 
 	public EnumTypeHandler(Class<E> type) {
 		if (type == null)
@@ -45,9 +45,14 @@ public class EnumTypeHandler<E extends Enum<E>> extends BaseTypeHandler<E> {
 	@Override
 	public void appendLog(StringBuilder builder, E parameter, DatabaseDialect dialect) {
 		if (DatabaseDialect.MYSQL == dialect) {
-			builder.append('\'');
-			builder.append((null != parameter) ? parameter.name() : null);
-			builder.append('\'');
+			if (parameter instanceof Null) {
+				builder.append("null");
+				// builder.append(null);
+			} else {
+				builder.append('\'');
+				builder.append((null != parameter) ? parameter.name() : null);
+				builder.append('\'');
+			}
 		}
 	}
 

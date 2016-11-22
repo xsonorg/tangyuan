@@ -37,7 +37,7 @@ public class OgnlBean {
 						fieldVo.getSetter().invoke(instance, value);
 					}
 				} else {
-					log.error("没有匹配的FieldVo: " + entry.getKey());
+					log.error("没有匹配的FieldVo: " + entry.getKey() + ", class:" + clazz);
 				}
 			}
 			return instance;
@@ -60,7 +60,7 @@ public class OgnlBean {
 					FieldVo fieldVo = entry.getValue();
 					fieldVo.getSetter().invoke(instance, value);
 				} else {
-					log.error("没有匹配的FieldVo: " + entry.getKey());
+					log.error("没有匹配的FieldVo: " + entry.getKey() + ", class:" + clazz);
 				}
 			}
 			return instance;

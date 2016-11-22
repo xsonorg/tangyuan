@@ -63,11 +63,15 @@ public class XmlShardingBuilder {
 	private void buildShardingClassNodes(List<XmlNodeWrapper> contexts) throws Exception {
 		// log.info("解析ShardingHandler:" + contexts.size());
 		for (XmlNodeWrapper xNode : contexts) {
-			String id = StringUtils.trim(xNode.getStringAttribute("id")); // xml validation 非空
+			String id = StringUtils.trim(xNode.getStringAttribute("id")); // xml
+																			// validation
+																			// 非空
 			if (null != mappingClassMap.get(id)) {
 				throw new XmlParseException("重复的shardingClass:" + id);
 			}
-			String className = StringUtils.trim(xNode.getStringAttribute("class")); // xml validation 非空
+			String className = StringUtils.trim(xNode.getStringAttribute("class")); // xml
+																					// validation
+																					// 非空
 			Class<?> handlerClass = ClassUtils.forName(className);
 			if (!ShardingHandler.class.isAssignableFrom(handlerClass)) {
 				throw new XmlParseException("mapping class not implement the ShardingHandler interface: " + className);
@@ -91,8 +95,11 @@ public class XmlShardingBuilder {
 
 			String dataSource = StringUtils.trim(xNode.getStringAttribute("dataSource"));
 			// if (null != dataSource) {
-			// if (!TangYuanContainer.getInstance().getDataSourceManager().isValidDsKey(dataSource)) {
-			// throw new XmlParseException("无效的ShardingTable dataSource:" + dataSource);
+			// if
+			// (!TangYuanContainer.getInstance().getDataSourceManager().isValidDsKey(dataSource))
+			// {
+			// throw new XmlParseException("无效的ShardingTable dataSource:" +
+			// dataSource);
 			// }
 			// }
 			if (null == dataSource || 0 == dataSource.length()) {
@@ -169,6 +176,19 @@ public class XmlShardingBuilder {
 			String _increment = StringUtils.trim(xNode.getStringAttribute("increment"));
 			if (null != _increment) {
 				tableNameIndexIncrement = Boolean.parseBoolean(_increment);
+			}
+
+			// TODO fix:修复在自定义模式下默认值的问题
+			if (null != handler) {
+				if (null == dbCount) {
+					dbCount = 0;
+				}
+				if (null == tableCount) {
+					tableCount = 0;
+				}
+				if (null == tableCapacity) {
+					tableCapacity = 0;
+				}
 			}
 
 			String defaultDataSource = null;

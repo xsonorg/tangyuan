@@ -2,7 +2,7 @@ package org.xson.tangyuan.xml.node;
 
 import org.xson.common.object.XCO;
 import org.xson.tangyuan.cache.vo.CacheUseVo;
-import org.xson.tangyuan.executor.SqlServiceContext;
+import org.xson.tangyuan.executor.ServiceContext;
 import org.xson.tangyuan.logging.Log;
 import org.xson.tangyuan.logging.LogFactory;
 import org.xson.tangyuan.ognl.Ognl;
@@ -29,7 +29,7 @@ public class InternalSelectSetNode extends AbstractSqlNode {
 	}
 
 	@Override
-	public boolean execute(SqlServiceContext context, Object arg) throws Throwable {
+	public boolean execute(ServiceContext context, Object arg) throws Throwable {
 		// 1. cache使用
 		if (null != cacheUse) {
 			Object result = cacheUse.getObject(arg);

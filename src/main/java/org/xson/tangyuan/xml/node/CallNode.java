@@ -7,9 +7,9 @@ import java.util.Map;
 import org.xson.common.object.XCO;
 import org.xson.tangyuan.TangYuanException;
 import org.xson.tangyuan.bridge.BridgedCallSupport;
-import org.xson.tangyuan.executor.SqlServiceActuator;
-import org.xson.tangyuan.executor.SqlServiceContext;
-import org.xson.tangyuan.executor.SqlServiceException;
+import org.xson.tangyuan.executor.ServiceActuator;
+import org.xson.tangyuan.executor.ServiceContext;
+import org.xson.tangyuan.executor.ServiceException;
 import org.xson.tangyuan.logging.Log;
 import org.xson.tangyuan.logging.LogFactory;
 import org.xson.tangyuan.ognl.Ognl;
@@ -59,7 +59,7 @@ public class CallNode implements SqlNode {
 	}
 
 	@Override
-	public boolean execute(SqlServiceContext context, Object arg) {
+	public boolean execute(ServiceContext context, Object arg) {
 		Object parameter = arg;
 		if (null != itemList) {
 			// 基于实际的参数来转换
@@ -86,18 +86,18 @@ public class CallNode implements SqlNode {
 		}
 
 		if (CallMode.EXTEND == mode) {
-			Object result = SqlServiceActuator.executeContext(service, context, parameter);
+			Object result = ServiceActuator.executeContext(service, context, parameter);
 			if (null != this.resultKey) {
 				Ognl.setValue(arg, this.resultKey, result);
 			}
 			// 这里的异常上抛
 		} else if (CallMode.ALONE == mode) {
 			try {
-				Object result = SqlServiceActuator.executeAlone(service, parameter);
+				Object result = ServiceActuator.executeAlone(service, parameter);
 				if (null != this.resultKey) {
 					Ognl.setValue(arg, this.resultKey, result);
 				}
-			} catch (SqlServiceException e) {
+			} catch (ServiceException e) {
 				if (null != exResultKey) {
 					// 放置错误信息
 					if (XCO.class == arg.getClass()) {
@@ -121,7 +121,7 @@ public class CallNode implements SqlNode {
 				log.error("call service error: " + service, e);
 			}
 		} else {
-			SqlServiceActuator.executeAsync(service, parameter);
+			ServiceActuator.executeAsync(service, parameter);
 		}
 		return true;
 	}

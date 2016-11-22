@@ -40,15 +40,15 @@ public class ExprVo {
 		ExprUnit unit = null;
 		if (var.indexOf(".") == -1) {
 			try {
-				unit = new ExprUnit(Integer.parseInt(var), ExprUnit.exprUnitConstants, ExprUnit.valueType3);
+				unit = new ExprUnit(Integer.parseInt(var), false);
 			} catch (NumberFormatException e) {
-				unit = new ExprUnit(Long.parseLong(var), ExprUnit.exprUnitConstants, ExprUnit.valueType4);
+				unit = new ExprUnit(Long.parseLong(var), false);
 			}
 		} else {
 			try {
-				unit = new ExprUnit(Float.parseFloat(var), ExprUnit.exprUnitConstants, ExprUnit.valueType5);
+				unit = new ExprUnit(Float.parseFloat(var), false);
 			} catch (NumberFormatException e) {
-				unit = new ExprUnit(Double.parseDouble(var), ExprUnit.exprUnitConstants, ExprUnit.valueType6);
+				unit = new ExprUnit(Double.parseDouble(var), false);
 			}
 		}
 		return unit;
@@ -58,19 +58,18 @@ public class ExprVo {
 		ExprUnit unit = null;
 		if (isStringConstant) {
 			// 常量字符串,''
-			unit = new ExprUnit(var, ExprUnit.exprUnitConstants, ExprUnit.valueType9);
+			unit = new ExprUnit(var, false);
 		} else {
 			// null, true, false, and or
 			if ("null".equalsIgnoreCase(var)) {
-				unit = new ExprUnit(null, ExprUnit.exprUnitConstants, ExprUnit.valueTypeNull);
+				unit = new ExprUnit(null, false);
 			} else if ("and".equalsIgnoreCase(var) || "or".equalsIgnoreCase(var)) {
 				addOperators(var);
 			} else if ("true".equalsIgnoreCase(var) || "false".equalsIgnoreCase(var)) {
-				unit = new ExprUnit(Boolean.parseBoolean(var), ExprUnit.exprUnitConstants, ExprUnit.valueType8);
+				unit = new ExprUnit(Boolean.parseBoolean(var), false);
 			} else {
 				if (isVar(var)) { // 是否是变量:{}
-					// unit = new ExprUnit(var, ExprUnit.exprUnitVariables);
-					unit = new ExprUnit(VariableParser.parse(getRealVar(var), false), ExprUnit.exprUnitVariables);
+					unit = new ExprUnit(VariableParser.parse(getRealVar(var), false), true);
 				} else if (isNumber(var)) { // 是否是数字常量
 					unit = getNumberUnit(var);
 				} else {
@@ -128,105 +127,127 @@ public class ExprVo {
 		return true;
 	}
 
-	private int getClassType(Class<?> clazz) {
-		if (byte.class == clazz || Byte.class == clazz) {
-			return ExprUnit.valueType1;
-		} else if (short.class == clazz || Short.class == clazz) {
-			return ExprUnit.valueType2;
-		} else if (int.class == clazz || Integer.class == clazz) {
-			return ExprUnit.valueType3;
-		} else if (long.class == clazz || Long.class == clazz) {
-			return ExprUnit.valueType4;
-		} else if (float.class == clazz || Float.class == clazz) {
-			return ExprUnit.valueType5;
-		} else if (double.class == clazz || Double.class == clazz) {
-			return ExprUnit.valueType6;
-		} else if (char.class == clazz || Character.class == clazz) {
-			return ExprUnit.valueType7;
-		} else if (boolean.class == clazz || Boolean.class == clazz) {
-			return ExprUnit.valueType8;
-		} else if (String.class == clazz) {
-			return ExprUnit.valueType9;
-		} else {
-			return ExprUnit.valueType10;
-		}
-	}
-
 	public boolean getResult(Object data) {
-		if (null != unit1 && null != unit2) {
-			Object var1 = null;
-			int type1 = ExprUnit.valueTypeNull;
-			if (ExprUnit.exprUnitConstants == this.unit1.getUnitType()) {
-				var1 = this.unit1.getValue();
-				type1 = this.unit1.getValueType();
-			} else {
-				// var1 = OgnlMap.getValue(data, (VariableVo) this.unit1.getValue());
-				var1 = ((VariableVo) this.unit1.getValue()).getValue(data);
-				if (null != var1) {
-					type1 = getClassType(var1.getClass());
-				}
-			}
-			Object var2 = null;
-			int type2 = ExprUnit.valueTypeNull;
-			if (ExprUnit.exprUnitConstants == this.unit2.getUnitType()) {
-				var2 = this.unit2.getValue();
-				type2 = this.unit2.getValueType();
-			} else {
-				// var2 = OgnlMap.getValue(data, (VariableVo) this.unit2.getValue());
-				var2 = ((VariableVo) this.unit2.getValue()).getValue(data);
-				if (null != var2) {
-					// type2 = getClassType(var1.getClass());
-					type2 = getClassType(var2.getClass());
-				}
-			}
 
-			if (this.operators == exprOperators1 || this.operators == exprOperators2) { // ==|!=
-				if (type1 < ExprUnit.valueType7 && type2 < ExprUnit.valueType7) {
-					return numberCompare(var1, type1, var2, type2);
-				} else if (type1 == ExprUnit.valueType9 && type2 == ExprUnit.valueType9) {
-					if (this.operators == exprOperators1) {
-						return var1.equals(var2);
-					} else {
-						return !var1.equals(var2);
-					}
-				} else if (type1 == ExprUnit.valueType8 && type2 == ExprUnit.valueType8) {
-					if (this.operators == exprOperators1) {
-						return ((Boolean) var1).booleanValue() == ((Boolean) var2).booleanValue();
-					} else {
-						return ((Boolean) var1).booleanValue() != ((Boolean) var2).booleanValue();
-					}
-				} else {
-					if (this.operators == exprOperators1) {
-						return var1 == var2;
-					} else {
-						return var1 != var2;
-					}
-				}
-			} else if (this.operators == exprOperators3 || this.operators == exprOperators4 || this.operators == exprOperators5
-					|| this.operators == exprOperators6) { // >|>=|<|<=
-				if (type1 > ExprUnit.valueType6 || type2 > ExprUnit.valueType6) {
-					throw new OgnlException("var1, var2必须是数值型");
-				}
-				return numberCompare(var1, type1, var2, type2);
-			}
+		Object x = this.unit1.getValue();
+		Object y = this.unit2.getValue();
+		if (this.unit1.isVariable()) {
+			x = ((VariableVo) x).getValue(data);
 		}
-		throw new OgnlException("getResult:表达式不合法.");
+		if (this.unit2.isVariable()) {
+			y = ((VariableVo) y).getValue(data);
+		}
+
+		// 1. null判断
+		if (null == x && null != y) {
+			return false;
+		}
+		if (null != x && null == y) {
+			return false;
+		}
+		if (null == x && null == y) {
+			return true;
+		}
+
+		// 2. 数值判断
+		if ((x instanceof Number) && (y instanceof Number)) {
+			return numberCompare((Number) x, (Number) y);
+		}
+
+		// 3. 数值判断
+		if ((x instanceof String) && (y instanceof String)) {
+			return stringCompare((String) x, (String) y);
+		}
+
+		// 4. 布尔判断
+		if ((x instanceof Boolean) && (y instanceof Boolean)) {
+			return booleanCompare((Boolean) x, (Boolean) y);
+		}
+
+		// 5. 时间判断
+		if ((x instanceof java.util.Date) && (y instanceof java.util.Date)) {
+			return dateCompare((java.util.Date) x, (java.util.Date) y);
+		}
+
+		// 6. 对象判断
+		return objectCompare(x, y);
+
 	}
 
-	private boolean numberCompare(Object var1, int type1, Object var2, int type2) {
-		if (this.operators == exprOperators1) {
-			return ExprCompare.numberCompareEqual(var1, type1, var2, type2);
-		} else if (this.operators == exprOperators2) { // >
-			return ExprCompare.numberCompareNotEqual(var1, type1, var2, type2);
+	/**
+	 * 数值比较
+	 */
+	private boolean numberCompare(Number x, Number y) {
+		if (this.operators == exprOperators1) {// ==
+			return LogicalExpr.numberEqual(x, y);
+		} else if (this.operators == exprOperators2) { // !=
+			return LogicalExpr.numberNotEqual(x, y);
 		} else if (this.operators == exprOperators3) { // >
-			return ExprCompare.numberCompareMoreThan(var1, type1, var2, type2);
+			return LogicalExpr.numberMoreThan(x, y);
 		} else if (this.operators == exprOperators4) { // >=
-			return ExprCompare.numberCompareGreaterThanOrEqual(var1, type1, var2, type2);
+			return LogicalExpr.numberMoreThanEqual(x, y);
 		} else if (this.operators == exprOperators5) { // <
-			return ExprCompare.numberCompareLessThan(var1, type1, var2, type2);
+			return LogicalExpr.numberLessThan(x, y);
 		} else if (this.operators == exprOperators6) { // <=
-			return ExprCompare.numberCompareLessThanOrEqual(var1, type1, var2, type2);
+			return LogicalExpr.numberLessThanEqual(x, y);
 		}
-		throw new OgnlException("不支持的表达式:" + this.operators);
+		throw new OgnlException("Illegal logical expression operator in numeric comparison: " + this.operators);
 	}
+
+	/**
+	 * 时间比较
+	 */
+	private boolean dateCompare(java.util.Date x, java.util.Date y) {
+		if (this.operators == exprOperators1) {// ==
+			return LogicalExpr.dateEqual(x, y);
+		} else if (this.operators == exprOperators2) { // !=
+			return LogicalExpr.dateNotEqual(x, y);
+		} else if (this.operators == exprOperators3) { // >
+			return LogicalExpr.dateMoreThan(x, y);
+		} else if (this.operators == exprOperators4) { // >=
+			return LogicalExpr.dateMoreThanEqual(x, y);
+		} else if (this.operators == exprOperators5) { // <
+			return LogicalExpr.dateLessThan(x, y);
+		} else if (this.operators == exprOperators6) { // <=
+			return LogicalExpr.dateLessThanEqual(x, y);
+		}
+		throw new OgnlException("Illegal logical expression operator in date comparison: " + this.operators);
+	}
+
+	/**
+	 * 布尔比较
+	 */
+	private boolean booleanCompare(Boolean x, Boolean y) {
+		if (this.operators == exprOperators1) {
+			return ((Boolean) x).booleanValue() == ((Boolean) y).booleanValue();
+		} else if (this.operators == exprOperators2) {
+			return ((Boolean) x).booleanValue() != ((Boolean) y).booleanValue();
+		}
+		throw new OgnlException("Illegal logical expression operator in boolean comparison: " + this.operators);
+	}
+
+	/**
+	 * 字符串比较
+	 */
+	private boolean stringCompare(String x, String y) {
+		if (this.operators == exprOperators1) {
+			return x.equals(y);
+		} else if (this.operators == exprOperators2) {
+			return !x.equals(y);
+		}
+		throw new OgnlException("Illegal logical expression operator in object comparison: " + this.operators);
+	}
+
+	/**
+	 * 对象比较
+	 */
+	private boolean objectCompare(Object x, Object y) {
+		if (this.operators == exprOperators1) {
+			return x == y;
+		} else if (this.operators == exprOperators2) {
+			return x != y;
+		}
+		throw new OgnlException("Illegal logical expression operator in object comparison: " + this.operators);
+	}
+
 }

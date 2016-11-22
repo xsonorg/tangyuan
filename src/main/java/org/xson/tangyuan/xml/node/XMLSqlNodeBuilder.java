@@ -54,8 +54,8 @@ public class XMLSqlNodeBuilder {
 
 	// private boolean licenses = true;
 
-	public XMLSqlNodeBuilder(InputStream inputStream, XmlConfigurationBuilder xmlConfigurationBuilder, XmlMapperBuilder xmlMapperBuilder, Map<String, SqlNode> integralRefMap,
-			Map<String, Integer> integralServiceMap) {
+	public XMLSqlNodeBuilder(InputStream inputStream, XmlConfigurationBuilder xmlConfigurationBuilder, XmlMapperBuilder xmlMapperBuilder,
+			Map<String, SqlNode> integralRefMap, Map<String, Integer> integralServiceMap) {
 		this.parser = new XPathParser(inputStream);
 		this.xmlConfigurationBuilder = xmlConfigurationBuilder;
 		this.xmlMapperBuilder = xmlMapperBuilder;
@@ -143,14 +143,14 @@ public class XMLSqlNodeBuilder {
 				cacheVo = xmlConfigurationBuilder.getDefaultCacheVo();
 			}
 			if (null == cacheVo) {
-				throw new XmlParseException("不存在的cache:" + cacheUse);
+				throw new XmlParseException("不存在的cache: " + cacheUse);
 			}
 
 			String key = map.get("key".toUpperCase());
 			if (null == key) {
-				throw new XmlParseException("不存在的cache.key:" + cacheUse);
+				throw new XmlParseException("不存在的cache.key: " + cacheUse);
 			}
-
+			// TODO: 可用expire代替
 			Integer time = null;
 			if (map.containsKey("time".toUpperCase())) {
 				time = Integer.parseInt(map.get("time".toUpperCase()));
@@ -212,7 +212,8 @@ public class XMLSqlNodeBuilder {
 
 	private void buildRefNode(List<XmlNodeWrapper> contexts) {
 		for (XmlNodeWrapper context : contexts) {
-			String id = StringUtils.trim(context.getStringAttribute("id")); // xml validation
+			String id = StringUtils.trim(context.getStringAttribute("id")); // xml
+																			// validation
 			String fullId = getFullId(id);
 			if (null == integralRefMap.get(fullId)) {
 				SqlNode sqlNode = parseNode(context, false);
@@ -235,7 +236,8 @@ public class XMLSqlNodeBuilder {
 			List<AbstractSqlNode> insertList = buildInsertNodes(context.evalNodes("insert"));
 			List<AbstractSqlNode> updateList = buildUpdateNodes(context.evalNodes("update"));
 			List<AbstractSqlNode> deleteList = buildDeleteNodes(context.evalNodes("delete"));
-			// List<AbstractSqlNode> procedureList = buildProcedureNodes(context.evalNodes("procedure"));
+			// List<AbstractSqlNode> procedureList =
+			// buildProcedureNodes(context.evalNodes("procedure"));
 			List<AbstractSqlNode> sqlServiceList = buildSqlServiceNodes(context.evalNodes("sql-service"));
 
 			registerService(selectSetList, "selectSet");
@@ -363,14 +365,16 @@ public class XMLSqlNodeBuilder {
 		for (XmlNodeWrapper context : contexts) {
 			SqlNode sqlNode = parseNode(context, false);
 			if (null != sqlNode) {
-				String id = StringUtils.trim(context.getStringAttribute("id")); // xml validation
+				String id = StringUtils.trim(context.getStringAttribute("id")); // xml
+																				// validation
 				existingService(id);
 
 				String _resultType = StringUtils.trim(context.getStringAttribute("resultType"));
 				String _resultMap = StringUtils.trim(context.getStringAttribute("resultMap"));
 				SelectResult selectResult = parseSelectResult(_resultType, _resultMap);
 
-				String _fetchSize = StringUtils.trim(context.getStringAttribute("fetchSize")); // xml validation
+				String _fetchSize = StringUtils.trim(context.getStringAttribute("fetchSize")); // xml
+																								// validation
 				Integer fetchSize = null;
 				if (null != _fetchSize) {
 					fetchSize = Integer.valueOf(_fetchSize);
@@ -400,7 +404,8 @@ public class XMLSqlNodeBuilder {
 					cacheUse = parseCacheUse(_cacheUse, getFullId(id));
 				}
 
-				SelectSetNode selectSetNode = new SelectSetNode(id, ns, getFullId(id), selectResult.resultType, selectResult.resultMap, dsKey, fetchSize, txDef, sqlNode, cacheUse);
+				SelectSetNode selectSetNode = new SelectSetNode(id, ns, getFullId(id), selectResult.resultType, selectResult.resultMap, dsKey,
+						fetchSize, txDef, sqlNode, cacheUse);
 				list.add(selectSetNode);
 			}
 		}
@@ -412,7 +417,8 @@ public class XMLSqlNodeBuilder {
 		for (XmlNodeWrapper context : contexts) {
 			SqlNode sqlNode = parseNode(context, false);
 			if (null != sqlNode) {
-				String id = StringUtils.trim(context.getStringAttribute("id")); // xml validation
+				String id = StringUtils.trim(context.getStringAttribute("id")); // xml
+																				// validation
 				existingService(id);
 
 				String _resultType = StringUtils.trim(context.getStringAttribute("resultType"));
@@ -443,7 +449,8 @@ public class XMLSqlNodeBuilder {
 					cacheUse = parseCacheUse(_cacheUse, getFullId(id));
 				}
 
-				SelectOneNode selectOneNode = new SelectOneNode(id, ns, getFullId(id), selectResult.resultType, selectResult.resultMap, dsKey, txDef, sqlNode, cacheUse);
+				SelectOneNode selectOneNode = new SelectOneNode(id, ns, getFullId(id), selectResult.resultType, selectResult.resultMap, dsKey, txDef,
+						sqlNode, cacheUse);
 				list.add(selectOneNode);
 			}
 		}
@@ -455,7 +462,8 @@ public class XMLSqlNodeBuilder {
 		for (XmlNodeWrapper context : contexts) {
 			SqlNode sqlNode = parseNode(context, false);
 			if (null != sqlNode) {
-				String id = StringUtils.trim(context.getStringAttribute("id")); // xml validation
+				String id = StringUtils.trim(context.getStringAttribute("id")); // xml
+																				// validation
 				existingService(id);
 
 				String dsKey = StringUtils.trim(context.getStringAttribute("dsKey"));
@@ -494,7 +502,8 @@ public class XMLSqlNodeBuilder {
 		for (XmlNodeWrapper context : contexts) {
 			SqlNode sqlNode = parseNode(context, false);
 			if (null != sqlNode) {
-				String id = StringUtils.trim(context.getStringAttribute("id")); // xml validation
+				String id = StringUtils.trim(context.getStringAttribute("id")); // xml
+																				// validation
 				existingService(id);
 
 				String _resultType = StringUtils.trim(context.getStringAttribute("resultType"));// 仅作标示作用
@@ -539,7 +548,8 @@ public class XMLSqlNodeBuilder {
 		for (XmlNodeWrapper context : contexts) {
 			SqlNode sqlNode = parseNode(context, false);
 			if (null != sqlNode) {
-				String id = StringUtils.trim(context.getStringAttribute("id")); // xml validation
+				String id = StringUtils.trim(context.getStringAttribute("id")); // xml
+																				// validation
 				existingService(id);
 
 				String dsKey = StringUtils.trim(context.getStringAttribute("dsKey"));
@@ -578,7 +588,8 @@ public class XMLSqlNodeBuilder {
 		for (XmlNodeWrapper context : contexts) {
 			SqlNode sqlNode = parseNode(context, false);
 			if (null != sqlNode) {
-				String id = StringUtils.trim(context.getStringAttribute("id")); // xml validation
+				String id = StringUtils.trim(context.getStringAttribute("id")); // xml
+																				// validation
 				existingService(id);
 
 				String dsKey = StringUtils.trim(context.getStringAttribute("dsKey"));
@@ -615,7 +626,8 @@ public class XMLSqlNodeBuilder {
 	private List<AbstractSqlNode> buildSqlServiceNodes(List<XmlNodeWrapper> contexts) {
 		List<AbstractSqlNode> list = new ArrayList<AbstractSqlNode>();
 		for (XmlNodeWrapper context : contexts) {
-			String id = StringUtils.trim(context.getStringAttribute("id")); // xml validation
+			String id = StringUtils.trim(context.getStringAttribute("id")); // xml
+																			// validation
 			existingService(id);
 
 			String txRef = StringUtils.trim(context.getStringAttribute("txRef"));
@@ -655,7 +667,8 @@ public class XMLSqlNodeBuilder {
 
 			SqlNode sqlNode = parseNode(context, true);
 			if (null != sqlNode) {
-				ServiceNode serviceNode = new ServiceNode(id, txRef, getFullId(id), dsKey, txDef, sqlNode, cacheUse, cacheClean, this.serviceResultType);
+				ServiceNode serviceNode = new ServiceNode(id, txRef, getFullId(id), dsKey, txDef, sqlNode, cacheUse, cacheClean,
+						this.serviceResultType);
 				list.add(serviceNode);
 			}
 		}
@@ -745,7 +758,8 @@ public class XMLSqlNodeBuilder {
 
 	private class IncludeHandler implements NodeHandler {
 		public void handleNode(XmlNodeWrapper nodeToHandle, List<SqlNode> targetContents) {
-			String refKey = nodeToHandle.getStringAttribute("ref"); // xml validation
+			String refKey = nodeToHandle.getStringAttribute("ref"); // xml
+																	// validation
 			SqlNode refNode = integralRefMap.get(refKey);
 			if (null == refNode) {
 				throw new XmlParseException("refNode is null:" + refKey);
@@ -805,9 +819,14 @@ public class XMLSqlNodeBuilder {
 	private class SetVarHandler implements NodeHandler {
 		public void handleNode(XmlNodeWrapper nodeToHandle, List<SqlNode> targetContents) {
 			// <setvar key="{x}" value="100" type="Integer" />
-			String key = StringUtils.trim(nodeToHandle.getStringAttribute("key")); // xml validation 非空
-			String _value = StringUtils.trim(nodeToHandle.getStringAttribute("value")); // xml validation 非空
-			String type = StringUtils.trim(nodeToHandle.getStringAttribute("type")); // xml validation
+			String key = StringUtils.trim(nodeToHandle.getStringAttribute("key")); // xml
+																					// validation
+																					// 非空
+			String _value = StringUtils.trim(nodeToHandle.getStringAttribute("value")); // xml
+																						// validation
+																						// 非空
+			String type = StringUtils.trim(nodeToHandle.getStringAttribute("type")); // xml
+																						// validation
 			if (!checkVar(key)) {
 				throw new XmlParseException("SetVar key 不合法, 应是{xxx}");
 			}
@@ -866,8 +885,10 @@ public class XMLSqlNodeBuilder {
 
 	private class LogHandler implements NodeHandler {
 		public void handleNode(XmlNodeWrapper nodeToHandle, List<SqlNode> targetContents) {
-			String message = StringUtils.trim(nodeToHandle.getStringAttribute("message")); // xml validation
-			String _level = StringUtils.trim(nodeToHandle.getStringAttribute("level")); // xml validation
+			String message = StringUtils.trim(nodeToHandle.getStringAttribute("message")); // xml
+																							// validation
+			String _level = StringUtils.trim(nodeToHandle.getStringAttribute("level")); // xml
+																						// validation
 			int level = 3;
 			if (null != _level) {
 				level = getLogLevel(_level);
@@ -923,8 +944,10 @@ public class XMLSqlNodeBuilder {
 
 	private class ThrowHandler implements NodeHandler {
 		public void handleNode(XmlNodeWrapper nodeToHandle, List<SqlNode> targetContents) {
-			String test = StringUtils.trim(nodeToHandle.getStringAttribute("test")); // xml validation
-			String code = StringUtils.trim(nodeToHandle.getStringAttribute("code")); // xml validation
+			String test = StringUtils.trim(nodeToHandle.getStringAttribute("test")); // xml
+																						// validation
+			String code = StringUtils.trim(nodeToHandle.getStringAttribute("code")); // xml
+																						// validation
 			String message = StringUtils.trim(nodeToHandle.getStringAttribute("message"));
 			String i18n = StringUtils.trim(nodeToHandle.getStringAttribute("i18n"));
 			if (null == test || null == code) {
@@ -942,7 +965,8 @@ public class XMLSqlNodeBuilder {
 				throw new XmlParseException("call节点中service属性不能为空");
 			}
 			String resultKey = getResultKey(StringUtils.trim(nodeToHandle.getStringAttribute("resultKey")));
-			String _mode = StringUtils.trim(nodeToHandle.getStringAttribute("mode"));// xml validation
+			String _mode = StringUtils.trim(nodeToHandle.getStringAttribute("mode"));// xml
+																						// validation
 			CallMode mode = CallMode.EXTEND;
 			if (null != _mode) {
 				mode = getCallMode(_mode);
@@ -1236,29 +1260,29 @@ public class XMLSqlNodeBuilder {
 		}
 	}
 
-	private Map<String, NodeHandler> nodeHandlers = new HashMap<String, NodeHandler>() {
-		private static final long serialVersionUID = 1L;
+	private Map<String, NodeHandler>	nodeHandlers	= new HashMap<String, NodeHandler>() {
+															private static final long	serialVersionUID	= 1L;
 
-		{
-			put("foreach", new ForEachHandler());
-			put("if", new IfHandler());
-			put("else", new ElseHandler());
-			put("elseif", new ElseIfHandler());
-			put("include", new IncludeHandler());
-			put("exception", new ThrowHandler());
-			put("return", new ReturnHandler());
-			put("setvar", new SetVarHandler());
-			put("log", new LogHandler());
-			put("selectSet", new SelectSetHandler());
-			put("selectOne", new SelectOneHandler());
-			put("selectVar", new SelectVarHandler());
-			put("update", new UpdateHandler());
-			put("delete", new DeleteHandler());
-			put("insert", new InsertHandler());
-			put("procedure", new ProcedureHandler());
-			put("transGroup", new TransGroupHandler());
-			put("call", new CallHandler());
-		}
-	};
+															{
+																put("foreach", new ForEachHandler());
+																put("if", new IfHandler());
+																put("else", new ElseHandler());
+																put("elseif", new ElseIfHandler());
+																put("include", new IncludeHandler());
+																put("exception", new ThrowHandler());
+																put("return", new ReturnHandler());
+																put("setvar", new SetVarHandler());
+																put("log", new LogHandler());
+																put("selectSet", new SelectSetHandler());
+																put("selectOne", new SelectOneHandler());
+																put("selectVar", new SelectVarHandler());
+																put("update", new UpdateHandler());
+																put("delete", new DeleteHandler());
+																put("insert", new InsertHandler());
+																put("procedure", new ProcedureHandler());
+																put("transGroup", new TransGroupHandler());
+																put("call", new CallHandler());
+															}
+														};
 
 }

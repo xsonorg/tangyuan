@@ -2,6 +2,8 @@ package org.xson.tangyuan.cache.vo;
 
 import java.util.Map;
 
+import net.sf.ehcache.CacheException;
+
 import org.xson.tangyuan.cache.EhCacheCache;
 import org.xson.tangyuan.cache.FIFOCache;
 import org.xson.tangyuan.cache.ICache;
@@ -9,6 +11,8 @@ import org.xson.tangyuan.cache.LRUCache;
 import org.xson.tangyuan.cache.LocalCache;
 import org.xson.tangyuan.cache.LoggingCache;
 import org.xson.tangyuan.cache.MemcachedCache;
+import org.xson.tangyuan.cache.RedisCache;
+import org.xson.tangyuan.cache.ScheduledCache;
 import org.xson.tangyuan.cache.SoftCache;
 import org.xson.tangyuan.cache.SynchronizedCache;
 import org.xson.tangyuan.cache.WeakCache;
@@ -45,6 +49,8 @@ public class CacheCreater {
 				strategyType = CacheStrategyType.SOFT;
 			} else if ("WEAK".equalsIgnoreCase(strategy)) {
 				strategyType = CacheStrategyType.WEAK;
+			} else if ("TIME".equalsIgnoreCase(strategy)) {
+				strategyType = CacheStrategyType.TIME;
 			}
 		}
 
@@ -54,8 +60,13 @@ public class CacheCreater {
 			maxSize = Integer.parseInt(_maxSize);
 		}
 
+		int survivalTime = 10; // 10秒
+		String _survivalTime = properties.get("survivalTime");
+		if (null != _survivalTime) {
+			survivalTime = Integer.parseInt(_survivalTime);
+		}
+
 		// 根据设置
-		// ICache strategyCache = null;
 		if (CacheStrategyType.LRU == strategyType) {
 			localCache = new LRUCache(localCache, maxSize);
 		} else if (CacheStrategyType.FIFO == strategyType) {
@@ -64,6 +75,8 @@ public class CacheCreater {
 			localCache = new SoftCache(localCache, maxSize);
 		} else if (CacheStrategyType.WEAK == strategyType) {
 			localCache = new WeakCache(localCache, maxSize);
+		} else if (CacheStrategyType.TIME == strategyType) {
+			localCache = new ScheduledCache(localCache, survivalTime);
 		}
 
 		// 如果是local必须
@@ -84,19 +97,24 @@ public class CacheCreater {
 
 	private ICache newEhcache(CacheVo cacheVo) {
 		EhCacheCache cache = new EhCacheCache();
-		cache.start(cacheVo.getResource());
+		String resource = cacheVo.getResource();
+		if (null == resource) {
+			throw new CacheException("missing resource in ehcache type");
+		}
+		cache.start(resource, cacheVo.getProperties());
 		return cache;
 	}
 
 	private ICache newMemcache(CacheVo cacheVo) {
 		MemcachedCache cache = new MemcachedCache();
-		cache.start(cacheVo.getProperties());
+		cache.start(cacheVo.getResource(), cacheVo.getProperties());
 		return cache;
 	}
 
 	private ICache newRedisCache(CacheVo cacheVo) {
-		// TODO
-		return null;
+		RedisCache cache = new RedisCache();
+		cache.start(cacheVo.getResource(), cacheVo.getProperties());
+		return cache;
 	}
 
 	// public ICache newInstance(String className) {
@@ -115,7 +133,4 @@ public class CacheCreater {
 	// return (ICache) instance;
 	// }
 
-	public static void main(String[] args) {
-		System.out.println("FIFO,LRUCache,Soft,Weak".toUpperCase());
-	}
 }

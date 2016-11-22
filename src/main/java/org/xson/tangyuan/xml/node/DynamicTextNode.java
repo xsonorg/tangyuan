@@ -3,7 +3,7 @@ package org.xson.tangyuan.xml.node;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.xson.tangyuan.executor.SqlServiceContext;
+import org.xson.tangyuan.executor.ServiceContext;
 import org.xson.tangyuan.ognl.vars.VariableParser;
 import org.xson.tangyuan.ognl.vars.VariableVo;
 import org.xson.tangyuan.util.StringUtils;
@@ -71,7 +71,7 @@ public class DynamicTextNode extends TextNode {
 	}
 
 	@Override
-	public boolean execute(SqlServiceContext context, Object arg) {
+	public boolean execute(ServiceContext context, Object arg) {
 		// 1. 替换动态变量
 		String sql = new GenericTokenParser("${", "}", new DynamicTokenParser(arg)).parse(this.parsedText);
 		// 1. 替换分库分表

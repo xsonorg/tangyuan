@@ -2,7 +2,7 @@ package org.xson.tangyuan.xml.node;
 
 import java.util.List;
 
-import org.xson.tangyuan.executor.SqlServiceContext;
+import org.xson.tangyuan.executor.ServiceContext;
 
 public class MixedNode implements SqlNode {
 
@@ -13,7 +13,7 @@ public class MixedNode implements SqlNode {
 	}
 
 	@Override
-	public boolean execute(SqlServiceContext context, Object arg) throws Throwable {
+	public boolean execute(ServiceContext context, Object arg) throws Throwable {
 		for (SqlNode sqlNode : contents) {
 			sqlNode.execute(context, arg);
 		}

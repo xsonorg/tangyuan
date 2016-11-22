@@ -21,9 +21,9 @@ import org.xson.tangyuan.transaction.XTransactionStatus;
 import org.xson.tangyuan.type.InsertReturn;
 import org.xson.tangyuan.xml.node.AbstractSqlNode;
 
-public class SqlServiceContext {
+public class ServiceContext {
 
-	private static Log				log					= LogFactory.getLog(SqlServiceContext.class);
+	private static Log				log					= LogFactory.getLog(ServiceContext.class);
 
 	private StringBuilder			sqlBuilder			= null;
 
@@ -72,7 +72,7 @@ public class SqlServiceContext {
 	 */
 	// protected Class<?> resultType = null;
 
-	protected SqlServiceContext() {
+	protected ServiceContext() {
 		this.sqlActuator = new SqlActuator(TangYuanContainer.getInstance().getTypeHandlerRegistry());
 		this.transactionManager = new TangYuanTransactionManager();
 		if (log.isInfoEnabled()) {
@@ -377,7 +377,7 @@ public class SqlServiceContext {
 	public void onException(Throwable e, String message) {
 		if (null == e) {
 			rollbackAll();
-			throw new SqlServiceException(message);
+			throw new ServiceException(message);
 		}
 		if (null != this.exceptionInfo) {
 			if (this.exceptionInfo.isNewTranscation()) {
@@ -393,10 +393,10 @@ public class SqlServiceContext {
 			}
 		}
 		rollbackAll();
-		if (e instanceof SqlServiceException) {
-			throw (SqlServiceException) e;
+		if (e instanceof ServiceException) {
+			throw (ServiceException) e;
 		}
-		throw new SqlServiceException(message, e);
+		throw new ServiceException(message, e);
 	}
 
 	// public Object onException(Throwable e, String message) {

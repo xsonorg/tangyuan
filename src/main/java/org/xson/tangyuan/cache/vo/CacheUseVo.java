@@ -5,7 +5,7 @@ import org.xson.tangyuan.task.AsyncTask;
 
 public class CacheUseVo extends CacheBase {
 
-	private Integer time;
+	private Integer	time;
 
 	public CacheUseVo(CacheVo cacheVo, String key, Integer time, String[] ignore, String service) {
 		super(cacheVo, ignore, service);
@@ -20,6 +20,7 @@ public class CacheUseVo extends CacheBase {
 			@Override
 			public void run() {
 				String key = buildKey(arg);
+				// System.out.println("PUT:" + key);
 				cacheVo.putObject(key, value, time, ignore, service);
 			}
 		});
@@ -27,6 +28,7 @@ public class CacheUseVo extends CacheBase {
 
 	public Object getObject(Object arg) {
 		String key = buildKey(arg);
+		// System.out.println("GET:" + key);
 		return cacheVo.getObject(key);
 	}
 

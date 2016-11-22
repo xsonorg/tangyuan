@@ -1,7 +1,7 @@
 package org.xson.tangyuan.xml.node;
 
-import org.xson.tangyuan.executor.SqlServiceContext;
-import org.xson.tangyuan.executor.SqlServiceException;
+import org.xson.tangyuan.executor.ServiceContext;
+import org.xson.tangyuan.executor.ServiceException;
 import org.xson.tangyuan.ognl.expr.ExprGroupVo;
 
 public class ExceptionNode implements SqlNode {
@@ -25,11 +25,11 @@ public class ExceptionNode implements SqlNode {
 	}
 
 	@Override
-	public boolean execute(SqlServiceContext context, Object arg) {
+	public boolean execute(ServiceContext context, Object arg) {
 		if (test.getResult(arg)) {
 			// throw new LabelDefinedException(code, (null != message) ? message : "", (null != i18n) ? i18n : "");
 			// new SqlServiceException("组合服务,事务处理中异常", e);
-			throw new SqlServiceException(code, (null != message) ? message : "");
+			throw new ServiceException(code, (null != message) ? message : "");
 		}
 		return true;
 	}

@@ -8,7 +8,8 @@ public class App {
 	public static Log log = LogFactory.getLog(App.class);
 
 	public static void main(String[] args) throws Exception {
-		System.out.println("NUMERIC".toLowerCase());
+		System.out.println("BIGINT".toLowerCase());
+		System.out.println("BigInteger".toUpperCase());
 	}
-
+	
 }

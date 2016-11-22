@@ -7,11 +7,11 @@ import org.xson.tangyuan.ognl.convert.ParameterConverter;
 import org.xson.tangyuan.task.AsyncTask;
 import org.xson.tangyuan.xml.node.AbstractSqlNode;
 
-public class SqlServiceActuator {
+public class ServiceActuator {
 
-	private static Log								log					= LogFactory.getLog(SqlServiceActuator.class);
+	private static Log								log					= LogFactory.getLog(ServiceActuator.class);
 
-	private static ThreadLocal<SqlServiceContext>	contextThreadLocal	= new ThreadLocal<SqlServiceContext>();
+	private static ThreadLocal<ServiceContext>	contextThreadLocal	= new ThreadLocal<ServiceContext>();
 
 	private static ParameterConverter				converter			= new ParameterConverter();
 
@@ -19,9 +19,9 @@ public class SqlServiceActuator {
 	 * 方法之前的线程调用
 	 */
 	public static void begin() {
-		SqlServiceContext context = contextThreadLocal.get();
+		ServiceContext context = contextThreadLocal.get();
 		if (null == context) {
-			context = new SqlServiceContext();
+			context = new ServiceContext();
 			log.debug("open a new context. hashCode[" + context.hashCode() + "]");
 			contextThreadLocal.set(context);
 		} else {
@@ -34,7 +34,7 @@ public class SqlServiceActuator {
 	 * 方法之后的线程调用
 	 */
 	public static void end() {
-		SqlServiceContext context = contextThreadLocal.get();
+		ServiceContext context = contextThreadLocal.get();
 		if (null != context) {
 			log.debug("context--. hashCode[" + context.hashCode() + "], context[" + (context.counter - 1) + "]");
 			if (--context.counter < 1) {
@@ -117,7 +117,7 @@ public class SqlServiceActuator {
 	public static void onException(Throwable throwable) throws Throwable {
 		// 这里只是拦截漏网的
 		log.debug("SqlService onException");
-		SqlServiceContext context = contextThreadLocal.get();
+		ServiceContext context = contextThreadLocal.get();
 		if (null != context) {
 			if (null != context.getExceptionInfo()) {
 				context.rollbackAll();
@@ -137,14 +137,14 @@ public class SqlServiceActuator {
 		throw throwable;
 	}
 
-	public static <T> T execute(String serviceId, Object arg) throws SqlServiceException {
+	public static <T> T execute(String serviceId, Object arg) throws ServiceException {
 		log.info("actuator service: " + serviceId);
-		SqlServiceContext context = contextThreadLocal.get();
+		ServiceContext context = contextThreadLocal.get();
 		if (null == context) {
 			// SqlServiceException ex = new SqlServiceException("服务不存在上下文: " + serviceId);
 			// ex.setRollback(true);
 			// 无context, 不涉及回滚
-			throw new SqlServiceException("Service context does not exist: " + serviceId);
+			throw new ServiceException("Service context does not exist: " + serviceId);
 		} else {
 			return executeContext(serviceId, context, arg);
 		}
@@ -154,7 +154,7 @@ public class SqlServiceActuator {
 	 * 上下文环境
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T> T executeContext(String serviceId, SqlServiceContext context, Object arg) {
+	public static <T> T executeContext(String serviceId, ServiceContext context, Object arg) {
 
 		// monitor
 		context.updateMonitor(serviceId);
@@ -180,16 +180,16 @@ public class SqlServiceActuator {
 	 * 单独环境
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T> T executeAlone(String serviceId, Object arg) throws SqlServiceException {
+	public static <T> T executeAlone(String serviceId, Object arg) throws ServiceException {
 		log.info("executeAlone service: " + serviceId);
 		AbstractSqlNode service = TangYuanContainer.getInstance().getSqlService(serviceId);
 		if (null == service) {
 			// 生产环境不会出现, 并且不涉及回滚
 			// SqlServiceException ex = new SqlServiceException("不存在的服务:" + serviceId);
 			// ex.setRollback(true);
-			throw new SqlServiceException("Service does not exist: " + serviceId);
+			throw new ServiceException("Service does not exist: " + serviceId);
 		}
-		SqlServiceContext context = new SqlServiceContext();
+		ServiceContext context = new ServiceContext();
 
 		// monitor
 		context.updateMonitor(serviceId);
@@ -217,10 +217,10 @@ public class SqlServiceActuator {
 
 			e.printStackTrace();// TODO
 
-			if (e instanceof SqlServiceException) {
-				throw (SqlServiceException) e;
+			if (e instanceof ServiceException) {
+				throw (ServiceException) e;
 			} else {
-				throw new SqlServiceException("actuator service exception: " + serviceId, e);
+				throw new ServiceException("actuator service exception: " + serviceId, e);
 			}
 		} finally {
 			context.stopMonitor();
@@ -240,7 +240,7 @@ public class SqlServiceActuator {
 		TangYuanContainer.getInstance().addAsyncTask(new AsyncTask() {
 			@Override
 			public void run() {
-				SqlServiceContext context = new SqlServiceContext();
+				ServiceContext context = new ServiceContext();
 
 				// monitor
 				context.updateMonitor(serviceId);

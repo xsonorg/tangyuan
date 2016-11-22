@@ -1,6 +1,7 @@
 package org.xson.tangyuan.cache;
 
 import java.io.InputStream;
+import java.util.Map;
 
 import org.xson.tangyuan.util.Resources;
 
@@ -14,7 +15,7 @@ public class EhCacheCache extends AbstractCache {
 	private Cache			cache;
 
 	@Override
-	public void start(String resource) {
+	public void start(String resource, Map<String, String> properties) {
 		if (null != cacheManager) {
 			return;
 		}
@@ -43,14 +44,24 @@ public class EhCacheCache extends AbstractCache {
 		return null;
 	}
 
+	// 1.TTI timeToIdleSeconds is the maximum number of seconds that an element
+	// can exist in the cache without being accessed:
+	// TTI用于设置对象在cache中的最大闲置时间，就是 在一直不访问这个对象的前提下，这个对象可以在cache中的存活时间。
+	// 2.TTL timeToLiveSeconds is the maximum number of seconds that an element
+	// can exist in the cache whether
+	// or not is has been accessed.
+	// TTL用于设置对象在cache中的最大存活时间，就是 无论对象访问或是不访问(闲置),这个对象在cache中的存活时间。
+	// 3.If the eternal flag is set, elements are allowed to exist in the cache
+	// eternally and none are evicted。
+	// 当配置了 eternal ，那么TTI和TTL这两个配置将被覆盖，对象会永恒存在cache中，永远不会过期。
+
 	@Override
 	public void putObject(Object key, Object value, Integer time) {
-		// TODO 序列化
 		Element element = null;
 		if (null == time) {
 			element = new Element(key, value);
 		} else {
-			element = new Element(key, value, time, time.intValue() * 2);
+			element = new Element(key, value, time.intValue(), time.intValue());
 		}
 		this.cache.put(element);
 	}
