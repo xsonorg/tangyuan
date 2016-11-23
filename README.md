@@ -37,13 +37,66 @@ TangYuan是一个基于Java的持久层框架。提供的持久层框架包括SQ
 ### 3. 系统架构
 ![系统架构图](https://github.com/xsonorg/imagedoc/blob/master/img/tangyuan.jpg)
 
-### 4. 4. 项目结构
+### 4. 版本和Maven依赖
 
-1. tangyuan-configuration.xml
-2. tangyuan-mapper.xml
-3. tangyuan-sharding.xml
-4. tangyuan-sqlservices.xml
+    <dependency>
+		<groupId>org.xson</groupId>
+		<artifactId>tangyuan</artifactId>
+		<version>1.0.0</version>
+	</dependency>
 
-### 5. 使用教程
+### 5. 代码片段
 
-### 6. 设计细节
+	
+	<sql-service id="updateProjectP2" dsKey="writetvr" txRef="tx_02">
+		<if test="{through} == 2">
+			<update rowCount="{nCount}">
+				update project set
+					project_state = 25, 
+					audit_time =  #{audit_time|now()},
+					update_time = #{update_time|now()}
+				where 
+					project_sn = #{project_sn} AND 
+					project_ctrl_state = 1 AND 
+					project_state = 20
+			</update>
+			<exception test="{nCount} != 1" code="-1" message="项目审核失败"/>
+			
+			<selectOne resultKey="{project}">
+				select * from project where project_sn = #{project_sn}
+			</selectOne>
+			<if test="{project.reservation_mode} == 2">
+				<insert>
+					INSERT INTO project_apply (
+						project_sn, provider_id, provider_name, bidding_amount,
+						create_time, apply_state, reservation_state
+					) VALUES (
+						#{project_sn}, #{project.provider_id}, #{project.provider_name}, #{bidding_amount|0}, 
+						#{create_time|now()}, 2, 10
+					)							
+				</insert>			
+			</if>
+		</if>
+		<else>
+			<update rowCount="{nCount}">
+				update project set
+					task_ctrl_state = 2, 
+					audit_no_time = #{audit_no_time|now()},
+					update_time = #{update_time|now()}
+				where 
+					project_sn = #{project_sn} AND 
+					task_ctrl_state = 1
+			</update>
+		</else>
+	</sql-service>
+
+
+### 6. 使用教程
+
+[使用教程和技术设计](https://github.com/xsonorg/tangyuan/wiki/Tutorials-and-design) 
+
+### 7. 联系交流
+
+- QQ群：518522232 *请备注关注的项目
+- 邮箱：<xson_org@126.com>
+- 项目地址: <https://github.com/xsonorg/tangyuan>
