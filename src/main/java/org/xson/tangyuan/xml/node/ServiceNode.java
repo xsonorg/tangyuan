@@ -3,6 +3,7 @@ package org.xson.tangyuan.xml.node;
 import org.xson.tangyuan.cache.vo.CacheCleanVo;
 import org.xson.tangyuan.cache.vo.CacheUseVo;
 import org.xson.tangyuan.executor.ServiceContext;
+import org.xson.tangyuan.executor.SqlServiceContext;
 import org.xson.tangyuan.executor.SqlServiceExceptionInfo;
 import org.xson.tangyuan.logging.Log;
 import org.xson.tangyuan.logging.LogFactory;
@@ -16,7 +17,7 @@ public class ServiceNode extends AbstractSqlNode {
 
 	private CacheCleanVo	cacheClean;
 
-	public ServiceNode(String id, String ns, String serviceKey, String dsKey, XTransactionDefinition txDef, SqlNode sqlNode, CacheUseVo cacheUse,
+	public ServiceNode(String id, String ns, String serviceKey, String dsKey, XTransactionDefinition txDef, TangYuanNode sqlNode, CacheUseVo cacheUse,
 			CacheCleanVo cacheClean, Class<?> resultType) {
 		this.id = id;
 		this.ns = ns;
@@ -33,63 +34,44 @@ public class ServiceNode extends AbstractSqlNode {
 	}
 
 	@Override
-	public boolean execute(ServiceContext context, Object arg) throws Throwable {
+	public boolean execute(ServiceContext serviceContext, Object arg) throws Throwable {
+		SqlServiceContext sqlContext = serviceContext.getSqlServiceContext();
+
 		// 1. cache使用
 		if (null != cacheUse) {
 			Object result = cacheUse.getObject(arg);
 			if (null != result) {
-				context.setResult(result);
+				serviceContext.setResult(result);
 				return true;
 			}
 		}
-
 		// 设置同进同出的类型
-		// context.setResultType(arg);
+		// sqlContext.setResultType(arg);
 
+		boolean createdTranscation = false;
 		long startTime = 0L;
 		try {
+			log.info("start transaction: " + this.txDef.getId());
 			startTime = System.currentTimeMillis();
-			// 这里只是创建事务
-			context.beforeExecute(this, false);
-			log.info("start trans: " + this.txDef.getId());
-		} catch (Throwable e) {
-			// SqlServiceException ex = new SqlServiceException("组合服务,事务启动之前发生异常", e);
-			// ex.setExPosition(ExceptionPosition.BEFORE);
-			// ex.setNewTranscation(txDef.isNewTranscation());
-			// throw ex;
-			context.setExceptionInfo(new SqlServiceExceptionInfo(txDef.isNewTranscation(), false));
-			throw e;
-		}
-
-		try {
-			sqlNode.execute(context, arg);
-			context.commit(false);
-			context.afterExecute(this);
+			// 1. 这里只是创建事务
+			sqlContext.beforeExecute(this, false);
+			createdTranscation = true;
+			// 2. 执行服务
+			sqlNode.execute(serviceContext, arg);
+			// 3. 提交(不确定)
+			sqlContext.commit(false);
+			createdTranscation = false;
+			sqlContext.afterExecute(this);
 			if (log.isInfoEnabled()) {
 				log.info("sql execution time: " + getSlowServiceLog(startTime));
 			}
 		} catch (Throwable e) {
-			// SqlServiceException ex = new SqlServiceException("组合服务,事务处理中异常", e);
-			// ex.setExPosition(ExceptionPosition.AMONG);
-			// ex.setNewTranscation(txDef.isNewTranscation());
-			// throw ex;
-
-			// SqlServiceException ex = null;
-			// if (e instanceof SqlServiceException) {
-			// ex = (SqlServiceException) e;
-			// } else {
-			// ex = new SqlServiceException("组合服务,事务处理中异常", e);
-			// }
-			// ex.setExPosition(ExceptionPosition.AMONG);
-			// ex.setNewTranscation(txDef.isNewTranscation());
-			// throw ex;
-
-			context.setExceptionInfo(new SqlServiceExceptionInfo(txDef.isNewTranscation(), true));
+			serviceContext.setExceptionInfo(new SqlServiceExceptionInfo(txDef.isNewTranscation(), createdTranscation));
 			throw e;
 		}
 
 		if (null != cacheUse) {
-			cacheUse.putObject(arg, context.getResult());
+			cacheUse.putObject(arg, serviceContext.getResult());
 		}
 		if (null != cacheClean) {
 			cacheClean.removeObject(arg);

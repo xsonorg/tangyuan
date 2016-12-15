@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<javaservices xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:noNamespaceSchemaLocation="http://xson.org/tangyuan/sqlservices.xsd">
+
+	<!-- 必选为Public,not final方法 -->
+	<service ns="" class="xxx,yyy"/>
+	
+	<service ns="" class="xxx,yyy">
+		<include/>
+		<exclude/>
+	</service>
+
+	<!-- 增加注释，避免自动生成Context -->
+
+	<!-- 增加Spring控制 <spring-extend resource="tangyuan-mongo-configuration.xml" 
+		/> -->
+
+</javaservices>

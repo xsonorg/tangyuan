@@ -2,6 +2,7 @@ package org.xson.tangyuan.xml.node;
 
 import org.xson.tangyuan.cache.vo.CacheCleanVo;
 import org.xson.tangyuan.executor.ServiceContext;
+import org.xson.tangyuan.executor.SqlServiceContext;
 import org.xson.tangyuan.executor.SqlServiceExceptionInfo;
 import org.xson.tangyuan.logging.Log;
 import org.xson.tangyuan.logging.LogFactory;
@@ -16,8 +17,7 @@ public class InsertNode extends AbstractSqlNode {
 
 	// 插入后的返回类型, 这里使用resultType, long, array, list, 空认为返回行数
 
-	public InsertNode(String id, String ns, String serviceKey, Class<?> resultType, String dsKey, XTransactionDefinition txDef, SqlNode sqlNode,
-			CacheCleanVo cacheClean) {
+	public InsertNode(String id, String ns, String serviceKey, Class<?> resultType, String dsKey, XTransactionDefinition txDef, TangYuanNode sqlNode, CacheCleanVo cacheClean) {
 
 		this.id = id;
 		this.ns = ns;
@@ -35,52 +35,47 @@ public class InsertNode extends AbstractSqlNode {
 	}
 
 	@Override
-	public boolean execute(ServiceContext context, Object arg) throws Throwable {
+	public boolean execute(ServiceContext serviceContext, Object arg) throws Throwable {
+		SqlServiceContext sqlContext = serviceContext.getSqlServiceContext();
 
-		// 2. 清理和重置执行环境
-		context.resetExecEnv();
+		// 1. 清理和重置执行环境
+		sqlContext.resetExecEnv();
 
+		boolean createdTranscation = false;
 		long startTime = 0L;
 		try {
-			// 3. 解析SQL
-			sqlNode.execute(context, arg); // 获取sql
+			// 2. 解析SQL
+			sqlNode.execute(serviceContext, arg); // 获取sql
 			if (log.isInfoEnabled()) {
-				context.parseSqlLog();
+				sqlContext.parseSqlLog();
 			}
-			// 3.1 开启事务
+			// 3. 开启事务
 			startTime = System.currentTimeMillis();
-			context.beforeExecute(this); // 开启事务异常, 可认为是事务之前的异常
-		} catch (Throwable e) {
-			// 考虑此处设置当前事务的特征, 上层统一处理(无论如何)
-			// SqlServiceException ex = new SqlServiceException("简单服务,事务启动之前发生异常", e);
-			// ex.setExPosition(ExceptionPosition.BEFORE);
-			// ex.setNewTranscation(txDef.isNewTranscation());
-			// throw ex;
-			context.setExceptionInfo(new SqlServiceExceptionInfo(txDef.isNewTranscation(), false));
-			throw e;
-		}
-
-		try {
+			sqlContext.beforeExecute(this); // 开启事务异常, 可认为是事务之前的异常
+			createdTranscation = true; // *
 			// 4. 执行SQL
 			Object result = null;
 			if (null == resultType) {
-				result = context.executeInsert(this);
+				result = sqlContext.executeInsert(this);
 			} else {
-				InsertReturn insertReturn = context.executeInsertReturn(this);
+				InsertReturn insertReturn = sqlContext.executeInsertReturn(this);
 				result = insertReturn.getColumns();
 			}
-			context.setResult(result);
-			context.commit(false); // 这里做不确定的提交
-			context.afterExecute(this);
+			// 5. 提交:这里做不确定的提交
+			sqlContext.commit(false);
+			if (txDef.isNewTranscation()) {
+				createdTranscation = false; // *
+			}
+			sqlContext.afterExecute(this);
+
+			// 6. 设置结果
+			serviceContext.setResult(result);
 			if (log.isInfoEnabled()) {
 				log.info("sql execution time: " + getSlowServiceLog(startTime));
 			}
 		} catch (Throwable e) {
-			// SqlServiceException ex = new SqlServiceException("简单服务,事务处理中异常", e);
-			// ex.setExPosition(ExceptionPosition.AMONG);
-			// ex.setNewTranscation(txDef.isNewTranscation());
-			// throw ex;
-			context.setExceptionInfo(new SqlServiceExceptionInfo(txDef.isNewTranscation(), true));
+			// 考虑此处设置当前事务的特征, 上层统一处理(无论如何)
+			serviceContext.setExceptionInfo(new SqlServiceExceptionInfo(txDef.isNewTranscation(), createdTranscation));
 			throw e;
 		}
 

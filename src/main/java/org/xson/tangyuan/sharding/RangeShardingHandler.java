@@ -1,12 +1,12 @@
 package org.xson.tangyuan.sharding;
 
-import org.xson.tangyuan.ognl.vars.VariableVo;
+import org.xson.tangyuan.ognl.vars.Variable;
 
 public class RangeShardingHandler extends AbstractShardingHandler {
 
 	@Override
 	public ShardingResult selectDataSourceAndTable(ShardingDefVo defVo, ShardingArgVo argVo, Object arg) {
-		VariableVo[] keywords = argVo.getKeywords();
+		Variable[] keywords = argVo.getKeywords();
 		if (null == keywords) {
 			keywords = defVo.getKeywords();
 		}

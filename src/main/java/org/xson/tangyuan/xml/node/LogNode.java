@@ -5,10 +5,10 @@ import java.util.List;
 import org.xson.tangyuan.executor.ServiceContext;
 import org.xson.tangyuan.logging.Log;
 import org.xson.tangyuan.logging.LogFactory;
-import org.xson.tangyuan.ognl.vars.VariableVo;
+import org.xson.tangyuan.ognl.vars.Variable;
 import org.xson.tangyuan.xml.parsing.TokenParserUtil;
 
-public class LogNode implements SqlNode {
+public class LogNode implements TangYuanNode {
 
 	private static Log			log					= LogFactory.getLog(LogNode.class);
 
@@ -48,18 +48,16 @@ public class LogNode implements SqlNode {
 				// builder.append((null != value) ? value.toString() : "null");
 				// }
 				// 增加特殊日志打印
-
 				if (String.class == obj.getClass()) {
 					builder.append(obj);
 				} else {
-					VariableVo varVo = (VariableVo) obj;
+					Variable varVo = (Variable) obj;
 					Object value = varVo.getValue(arg);
 					if (null == value && LOG_SPECIAL_MARK.equalsIgnoreCase(varVo.getOriginal())) {
 						value = arg.toString();
 					}
 					builder.append((null != value) ? value.toString() : "null");
 				}
-
 			}
 			parsedText = builder.toString();
 		}

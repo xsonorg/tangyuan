@@ -4,7 +4,7 @@ import java.util.Map;
 
 import org.xson.common.object.XCO;
 import org.xson.tangyuan.ognl.map.OgnlMap;
-import org.xson.tangyuan.ognl.vars.VariableVo;
+import org.xson.tangyuan.ognl.vars.vo.VariableItemWraper;
 import org.xson.tangyuan.ognl.xco.OgnlXCO;
 
 public class Ognl {
@@ -24,7 +24,7 @@ public class Ognl {
 	}
 
 	@SuppressWarnings("unchecked")
-	public static Object getValue(Object container, VariableVo varVo) {
+	public static Object getValue(Object container, VariableItemWraper varVo) {
 		if (null == container) {
 			return null;
 		}

@@ -4,7 +4,7 @@ import org.xson.tangyuan.TangYuanException;
 
 public class TransactionException extends TangYuanException {
 
-	private static final long	serialVersionUID	= -8015570658967350489L;
+	private static final long serialVersionUID = 1L;
 
 	public TransactionException() {
 		super();
@@ -21,5 +21,19 @@ public class TransactionException extends TangYuanException {
 	public TransactionException(Throwable cause) {
 		super(cause);
 	}
+
+	// 是否对当前事务有影响,
+	// private boolean affect = false;
+	// public TransactionException(String message, boolean affect) {
+	// super(message);
+	// this.affect = affect;
+	// }
+	// public TransactionException(boolean affect, Throwable cause) {
+	// super(cause);
+	// this.affect = affect;
+	// }
+	// public boolean isAffect() {
+	// return affect;
+	// }
 
 }

@@ -2,33 +2,32 @@ package org.xson.tangyuan.xml.node;
 
 import org.xson.tangyuan.executor.ServiceContext;
 import org.xson.tangyuan.executor.ServiceException;
-import org.xson.tangyuan.ognl.expr.ExprGroupVo;
+import org.xson.tangyuan.ognl.vars.vo.LogicalVariable;
 
-public class ExceptionNode implements SqlNode {
+public class ExceptionNode implements TangYuanNode {
 
-	private ExprGroupVo	test;
+	private LogicalVariable	test;
 
-	private int			code;
+	private int				code;
 
-	private String		message;
+	private String			message;
 
 	// private String i18n;
+	// this.i18n = i18n;
+	// if (null == i18n) {
+	// this.i18n = this.message;
+	// }
 
-	public ExceptionNode(ExprGroupVo test, int code, String message, String i18n) {
+	public ExceptionNode(LogicalVariable test, int code, String message, String i18n) {
 		this.test = test;
 		this.code = code;
 		this.message = message;
-		// this.i18n = i18n;
-		// if (null == i18n) {
-		// this.i18n = this.message;
-		// }
 	}
 
 	@Override
 	public boolean execute(ServiceContext context, Object arg) {
 		if (test.getResult(arg)) {
 			// throw new LabelDefinedException(code, (null != message) ? message : "", (null != i18n) ? i18n : "");
-			// new SqlServiceException("组合服务,事务处理中异常", e);
 			throw new ServiceException(code, (null != message) ? message : "");
 		}
 		return true;

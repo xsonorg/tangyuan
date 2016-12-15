@@ -13,9 +13,9 @@ import org.xson.tangyuan.executor.ServiceException;
 import org.xson.tangyuan.logging.Log;
 import org.xson.tangyuan.logging.LogFactory;
 import org.xson.tangyuan.ognl.Ognl;
-import org.xson.tangyuan.ognl.vars.VariableVo;
+import org.xson.tangyuan.ognl.vars.Variable;
 
-public class CallNode implements SqlNode {
+public class CallNode implements TangYuanNode {
 
 	private static Log					log			= LogFactory.getLog(CallNode.class);
 	private String						service;
@@ -38,13 +38,13 @@ public class CallNode implements SqlNode {
 
 	protected static class CallNodeParameterItem {
 
-		protected CallNodeParameterItem(String name, VariableVo value) {
+		protected CallNodeParameterItem(String name, Variable value) {
 			this.name = name;
 			this.value = value;
 		}
 
 		String		name;
-		VariableVo	value;
+		Variable	value;
 	}
 
 	public CallNode(String service, String resultKey, CallMode mode, List<CallNodeParameterItem> itemList, String exResultKey) {
@@ -86,7 +86,8 @@ public class CallNode implements SqlNode {
 		}
 
 		if (CallMode.EXTEND == mode) {
-			Object result = ServiceActuator.executeContext(service, context, parameter);
+			// Object result = ServiceActuator.executeContext(service, context, parameter);
+			Object result = ServiceActuator.execute(service, parameter);
 			if (null != this.resultKey) {
 				Ognl.setValue(arg, this.resultKey, result);
 			}
@@ -102,15 +103,11 @@ public class CallNode implements SqlNode {
 					// 放置错误信息
 					if (XCO.class == arg.getClass()) {
 						XCO xco = new XCO();
-						// xco.setIntegerValue("errorCode", e.getErrorCode());
-						// xco.setStringValue("errorMessage", e.getErrorMessage());
 						xco.setIntegerValue("code", e.getErrorCode());
 						xco.setStringValue("message", e.getErrorMessage());
 						Ognl.setValue(arg, this.exResultKey, xco);
 					} else if (Map.class.isAssignableFrom(arg.getClass())) {
 						Map<String, Object> map = new HashMap<String, Object>();
-						// map.put("errorCode", e.getErrorCode());
-						// map.put("errorMessage", e.getErrorMessage());
 						map.put("code", e.getErrorCode());
 						map.put("message", e.getErrorMessage());
 						Ognl.setValue(arg, this.exResultKey, map);

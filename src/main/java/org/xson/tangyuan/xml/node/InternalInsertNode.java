@@ -2,6 +2,7 @@ package org.xson.tangyuan.xml.node;
 
 import org.xson.tangyuan.cache.vo.CacheCleanVo;
 import org.xson.tangyuan.executor.ServiceContext;
+import org.xson.tangyuan.executor.SqlServiceContext;
 import org.xson.tangyuan.logging.Log;
 import org.xson.tangyuan.logging.LogFactory;
 import org.xson.tangyuan.ognl.Ognl;
@@ -20,7 +21,7 @@ public class InternalInsertNode extends AbstractSqlNode {
 	private String			incrementKey;
 	private CacheCleanVo	cacheClean;
 
-	public InternalInsertNode(String dsKey, String rowCount, String incrementKey, SqlNode sqlNode, CacheCleanVo cacheClean) {
+	public InternalInsertNode(String dsKey, String rowCount, String incrementKey, TangYuanNode sqlNode, CacheCleanVo cacheClean) {
 		this.dsKey = dsKey;
 		this.resultKey = rowCount;
 		this.incrementKey = incrementKey;
@@ -30,10 +31,12 @@ public class InternalInsertNode extends AbstractSqlNode {
 	}
 
 	@Override
-	public boolean execute(ServiceContext context, Object arg) throws Throwable {
+	public boolean execute(ServiceContext serviceContext, Object arg) throws Throwable {
+		SqlServiceContext context = serviceContext.getSqlServiceContext();
+
 		context.resetExecEnv();
 
-		sqlNode.execute(context, arg); // 获取sql
+		sqlNode.execute(serviceContext, arg); // 获取sql
 		if (log.isInfoEnabled()) {
 			context.parseSqlLog();
 		}

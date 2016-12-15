@@ -8,9 +8,9 @@ import org.xson.tangyuan.ognl.FieldVo;
 import org.xson.tangyuan.ognl.FieldVoWrapper;
 import org.xson.tangyuan.ognl.Ognl;
 import org.xson.tangyuan.ognl.OgnlException;
-import org.xson.tangyuan.ognl.vars.VariableUnitVo;
-import org.xson.tangyuan.ognl.vars.VariableUnitVo.VariableUnitEnum;
-import org.xson.tangyuan.ognl.vars.VariableVo;
+import org.xson.tangyuan.ognl.vars.vo.VariableItem;
+import org.xson.tangyuan.ognl.vars.vo.VariableItem.VariableItemType;
+import org.xson.tangyuan.ognl.vars.vo.VariableItemWraper;
 import org.xson.tangyuan.util.TypeUtils;
 
 public class OgnlXCO {
@@ -46,24 +46,17 @@ public class OgnlXCO {
 	 * @param varVo
 	 * @return
 	 */
-	public static Object getValue(XCO data, VariableVo varVo) {
+	public static Object getValue(XCO data, VariableItemWraper varVo) {
 		// 这里取值为空是否要报错, 应该严格报错, 只有最后一个为空，可以忽略
-		if (null != varVo.getVarUnit()) {
-			Object result = data.getObjectValue(varVo.getVarUnit().getName());
-			if (null != result) {
-				return result;
-			}
-			if (varVo.isHasDefault()) {
-				result = varVo.getDefaultValue();
-			}
-			return result;
+		if (null != varVo.getItem()) {
+			return data.getObjectValue(varVo.getItem().getName());
 		}
-		List<VariableUnitVo> varUnitList = varVo.getVarUnitList();
+		List<VariableItem> varUnitList = varVo.getItemList();
 		int size = varUnitList.size();
 		Object returnObj = data;
 		for (int i = 0; i < size; i++) {
 			boolean hasNext = (i + 1) < size;
-			VariableUnitVo vUnitVo = varUnitList.get(i);
+			VariableItem vUnitVo = varUnitList.get(i);
 			if (returnObj instanceof XCO) {
 				returnObj = getValueFromXCO(returnObj, vUnitVo, data);
 			} else if (returnObj instanceof Collection) {
@@ -86,9 +79,11 @@ public class OgnlXCO {
 					returnObj = getValueFromBooleanArray(returnObj, vUnitVo, data);
 				} else if (char[].class == clazz) {
 					returnObj = getValueFromCharArray(returnObj, vUnitVo, data);
-				} else if (char[].class == clazz) {
-					returnObj = getValueFromCharArray(returnObj, vUnitVo, data);
-				} else {
+				}
+				// else if (char[].class == clazz) {
+				// returnObj = getValueFromCharArray(returnObj, vUnitVo, data);
+				// }
+				else {
 					returnObj = getValueFromObjectArray(returnObj, vUnitVo, data);
 				}
 			} else {
@@ -99,21 +94,21 @@ public class OgnlXCO {
 			}
 		}
 
-		if (null == returnObj && varVo.isHasDefault()) {
-			returnObj = varVo.getDefaultValue();
-		}
+		// if (null == returnObj && varVo.isHasDefault()) {
+		// returnObj = varVo.getDefaultValue();
+		// }
 
 		return returnObj;
 	}
 
-	private static Object getValueFromXCO(Object target, VariableUnitVo peVo, XCO original) {
+	private static Object getValueFromXCO(Object target, VariableItem peVo, XCO original) {
 
 		String key = peVo.getName();
-		if (VariableUnitEnum.VAR == peVo.getType()) {
+		if (VariableItemType.VAR == peVo.getType()) {
 			key = (String) original.getObjectValue(peVo.getName());
 		}
 
-		if (VariableUnitEnum.PROPERTY == peVo.getType() || VariableUnitEnum.VAR == peVo.getType()) {
+		if (VariableItemType.PROPERTY == peVo.getType() || VariableItemType.VAR == peVo.getType()) {
 			XCO xco = (XCO) target;
 			Object value = xco.getObjectValue(key);
 			if (null != value) {
@@ -128,14 +123,14 @@ public class OgnlXCO {
 	}
 
 	@SuppressWarnings("rawtypes")
-	private static Object getValueFromCollection(Object target, VariableUnitVo peVo, XCO original) {
+	private static Object getValueFromCollection(Object target, VariableItem peVo, XCO original) {
 
 		int index = peVo.getIndex();
-		if (VariableUnitEnum.VAR == peVo.getType()) {
+		if (VariableItemType.VAR == peVo.getType()) {
 			index = (Integer) original.getObjectValue(peVo.getName());
 		}
 
-		if (VariableUnitEnum.INDEX == peVo.getType() || VariableUnitEnum.VAR == peVo.getType()) {
+		if (VariableItemType.INDEX == peVo.getType() || VariableItemType.VAR == peVo.getType()) {
 			if (target instanceof List) {
 				List list = (List) target;
 				if (index < list.size()) {
@@ -161,14 +156,14 @@ public class OgnlXCO {
 		return null;
 	}
 
-	private static Object getValueFromObjectArray(Object target, VariableUnitVo peVo, XCO original) {
+	private static Object getValueFromObjectArray(Object target, VariableItem peVo, XCO original) {
 		Object[] array = (Object[]) target;
-		if (VariableUnitEnum.INDEX == peVo.getType()) {
+		if (VariableItemType.INDEX == peVo.getType()) {
 			if (peVo.getIndex() < array.length) {
 				Object value = array[peVo.getIndex()];
 				return value;
 			}
-		} else if (VariableUnitEnum.VAR == peVo.getType()) {
+		} else if (VariableItemType.VAR == peVo.getType()) {
 			int index = (Integer) original.getObjectValue(peVo.getName());
 			if (index < array.length) {
 				Object value = array[index];
@@ -183,13 +178,13 @@ public class OgnlXCO {
 		return null;
 	}
 
-	private static Object getValueFromIntArray(Object target, VariableUnitVo peVo, XCO original) {
+	private static Object getValueFromIntArray(Object target, VariableItem peVo, XCO original) {
 		int[] array = (int[]) target;
-		if (VariableUnitEnum.INDEX == peVo.getType()) {
+		if (VariableItemType.INDEX == peVo.getType()) {
 			if (peVo.getIndex() < array.length) {
 				return array[peVo.getIndex()];
 			}
-		} else if (VariableUnitEnum.VAR == peVo.getType()) {
+		} else if (VariableItemType.VAR == peVo.getType()) {
 			int index = (Integer) original.getObjectValue(peVo.getName());
 			if (index < array.length) {
 				return array[index];
@@ -203,13 +198,13 @@ public class OgnlXCO {
 		return null;
 	}
 
-	private static Object getValueFromLongArray(Object target, VariableUnitVo peVo, XCO original) {
+	private static Object getValueFromLongArray(Object target, VariableItem peVo, XCO original) {
 		long[] array = (long[]) target;
-		if (VariableUnitEnum.INDEX == peVo.getType()) {
+		if (VariableItemType.INDEX == peVo.getType()) {
 			if (peVo.getIndex() < array.length) {
 				return array[peVo.getIndex()];
 			}
-		} else if (VariableUnitEnum.VAR == peVo.getType()) {
+		} else if (VariableItemType.VAR == peVo.getType()) {
 			int index = (Integer) original.getObjectValue(peVo.getName());
 			if (index < array.length) {
 				return array[index];
@@ -223,13 +218,13 @@ public class OgnlXCO {
 		return null;
 	}
 
-	private static Object getValueFromBooleanArray(Object target, VariableUnitVo peVo, XCO original) {
+	private static Object getValueFromBooleanArray(Object target, VariableItem peVo, XCO original) {
 		boolean[] array = (boolean[]) target;
-		if (VariableUnitEnum.INDEX == peVo.getType()) {
+		if (VariableItemType.INDEX == peVo.getType()) {
 			if (peVo.getIndex() < array.length) {
 				return array[peVo.getIndex()];
 			}
-		} else if (VariableUnitEnum.VAR == peVo.getType()) {
+		} else if (VariableItemType.VAR == peVo.getType()) {
 			int index = (Integer) original.getObjectValue(peVo.getName());
 			if (index < array.length) {
 				return array[index];
@@ -243,13 +238,13 @@ public class OgnlXCO {
 		return null;
 	}
 
-	private static Object getValueFromByteArray(Object target, VariableUnitVo peVo, XCO original) {
+	private static Object getValueFromByteArray(Object target, VariableItem peVo, XCO original) {
 		byte[] array = (byte[]) target;
-		if (VariableUnitEnum.INDEX == peVo.getType()) {
+		if (VariableItemType.INDEX == peVo.getType()) {
 			if (peVo.getIndex() < array.length) {
 				return array[peVo.getIndex()];
 			}
-		} else if (VariableUnitEnum.VAR == peVo.getType()) {
+		} else if (VariableItemType.VAR == peVo.getType()) {
 			int index = (Integer) original.getObjectValue(peVo.getName());
 			if (index < array.length) {
 				return array[index];
@@ -263,13 +258,13 @@ public class OgnlXCO {
 		return null;
 	}
 
-	private static Object getValueFromCharArray(Object target, VariableUnitVo peVo, XCO original) {
+	private static Object getValueFromCharArray(Object target, VariableItem peVo, XCO original) {
 		char[] array = (char[]) target;
-		if (VariableUnitEnum.INDEX == peVo.getType()) {
+		if (VariableItemType.INDEX == peVo.getType()) {
 			if (peVo.getIndex() < array.length) {
 				return array[peVo.getIndex()];
 			}
-		} else if (VariableUnitEnum.VAR == peVo.getType()) {
+		} else if (VariableItemType.VAR == peVo.getType()) {
 			int index = (Integer) original.getObjectValue(peVo.getName());
 			if (index < array.length) {
 				return array[index];
@@ -283,13 +278,13 @@ public class OgnlXCO {
 		return null;
 	}
 
-	private static Object getValueFromDoubleArray(Object target, VariableUnitVo peVo, XCO original) {
+	private static Object getValueFromDoubleArray(Object target, VariableItem peVo, XCO original) {
 		double[] array = (double[]) target;
-		if (VariableUnitEnum.INDEX == peVo.getType()) {
+		if (VariableItemType.INDEX == peVo.getType()) {
 			if (peVo.getIndex() < array.length) {
 				return array[peVo.getIndex()];
 			}
-		} else if (VariableUnitEnum.VAR == peVo.getType()) {
+		} else if (VariableItemType.VAR == peVo.getType()) {
 			int index = (Integer) original.getObjectValue(peVo.getName());
 			if (index < array.length) {
 				return array[index];
@@ -303,13 +298,13 @@ public class OgnlXCO {
 		return null;
 	}
 
-	private static Object getValueFromFloatArray(Object target, VariableUnitVo peVo, XCO original) {
+	private static Object getValueFromFloatArray(Object target, VariableItem peVo, XCO original) {
 		float[] array = (float[]) target;
-		if (VariableUnitEnum.INDEX == peVo.getType()) {
+		if (VariableItemType.INDEX == peVo.getType()) {
 			if (peVo.getIndex() < array.length) {
 				return array[peVo.getIndex()];
 			}
-		} else if (VariableUnitEnum.VAR == peVo.getType()) {
+		} else if (VariableItemType.VAR == peVo.getType()) {
 			int index = (Integer) original.getObjectValue(peVo.getName());
 			if (index < array.length) {
 				return array[index];
@@ -323,13 +318,13 @@ public class OgnlXCO {
 		return null;
 	}
 
-	private static Object getValueFromShortArray(Object target, VariableUnitVo peVo, XCO original) {
+	private static Object getValueFromShortArray(Object target, VariableItem peVo, XCO original) {
 		short[] array = (short[]) target;
-		if (VariableUnitEnum.INDEX == peVo.getType()) {
+		if (VariableItemType.INDEX == peVo.getType()) {
 			if (peVo.getIndex() < array.length) {
 				return array[peVo.getIndex()];
 			}
-		} else if (VariableUnitEnum.VAR == peVo.getType()) {
+		} else if (VariableItemType.VAR == peVo.getType()) {
 			int index = (Integer) original.getObjectValue(peVo.getName());
 			if (index < array.length) {
 				return array[index];

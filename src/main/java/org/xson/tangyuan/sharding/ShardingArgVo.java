@@ -1,6 +1,6 @@
 package org.xson.tangyuan.sharding;
 
-import org.xson.tangyuan.ognl.vars.VariableVo;
+import org.xson.tangyuan.ognl.vars.Variable;
 
 public class ShardingArgVo {
 
@@ -48,7 +48,7 @@ public class ShardingArgVo {
 	private ShardingTemplate	template;
 
 	// 分库分表关键字集合, 选择可为空
-	private VariableVo[]		keywords;
+	private Variable[]		keywords;
 	// String[] keywords
 
 	private ShardingDefVo		shardingDef;
@@ -60,7 +60,7 @@ public class ShardingArgVo {
 	// this.shardingDef = shardingDef;
 	// }
 
-	public ShardingArgVo(String table, ShardingTemplate template, VariableVo[] keywords, ShardingDefVo shardingDef) {
+	public ShardingArgVo(String table, ShardingTemplate template, Variable[] keywords, ShardingDefVo shardingDef) {
 		this.table = table;
 		this.template = template;
 		this.keywords = keywords;
@@ -71,7 +71,7 @@ public class ShardingArgVo {
 		return table;
 	}
 
-	public VariableVo[] getKeywords() {
+	public Variable[] getKeywords() {
 		return keywords;
 	}
 

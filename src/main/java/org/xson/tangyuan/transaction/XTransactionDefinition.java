@@ -54,8 +54,7 @@ public class XTransactionDefinition {
 	 * <p>
 	 * 这是由于查询时系统中其他事务修改的提交而引起的。比如事务T1读取某一数据，事务T2读取并修改了该数据，T1为了对读取值进行检验而再次读取该数据，便得到了不同的结果。
 	 * <p>
-	 * 一种更易理解的说法是：在一个事务内，多次读同一个数据。在这个事务还没有结束时，另一个事务也访问该同一数据。
-	 * 那么，在第一个事务的两次读数据之间。由于第二个事务的修改，那么第一个事务读到的数据可能不一样，这样就发生了在一个事务内两次读到的数据是不一样的，因此称为不可重复读，即原始读取不可重复。
+	 * 一种更易理解的说法是：在一个事务内，多次读同一个数据。在这个事务还没有结束时，另一个事务也访问该同一数据。 那么，在第一个事务的两次读数据之间。由于第二个事务的修改，那么第一个事务读到的数据可能不一样，这样就发生了在一个事务内两次读到的数据是不一样的，因此称为不可重复读，即原始读取不可重复。
 	 * 
 	 * @see java.sql.Connection#TRANSACTION_READ_COMMITTED
 	 */
@@ -63,8 +62,7 @@ public class XTransactionDefinition {
 	/**
 	 * 可重复读取
 	 * <p>
-	 * 可重复读(Repeatable Read)，当使用可重复读隔离级别时，在事务执行期间会锁定该事务以任何方式引用的所有行。 因此，如果在同一个事务中发出同一个SELECT语句两次或更多次，那么产生的结果数据集总是相同的。
-	 * 因此，使用可重复读隔离级别的事务可以多次检索同一行集，并对它们执行任意操作，直到提交或回滚操作终止该事务。
+	 * 可重复读(Repeatable Read)，当使用可重复读隔离级别时，在事务执行期间会锁定该事务以任何方式引用的所有行。 因此，如果在同一个事务中发出同一个SELECT语句两次或更多次，那么产生的结果数据集总是相同的。 因此，使用可重复读隔离级别的事务可以多次检索同一行集，并对它们执行任意操作，直到提交或回滚操作终止该事务。
 	 * 
 	 * @see java.sql.Connection#TRANSACTION_REPEATABLE_READ
 	 */
@@ -160,6 +158,13 @@ public class XTransactionDefinition {
 
 	public boolean isNewTranscation() {
 		if (PROPAGATION_REQUIRES_NEW == behavior || PROPAGATION_NOT_SUPPORTED == behavior) {
+			return true;
+		}
+		return false;
+	}
+
+	protected boolean isAutoCommit() {
+		if (PROPAGATION_SUPPORTS == behavior || PROPAGATION_NOT_SUPPORTED == behavior || PROPAGATION_NEVER == behavior) {
 			return true;
 		}
 		return false;

@@ -3,7 +3,7 @@ package org.xson.tangyuan.xml.parsing;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.xson.tangyuan.ognl.vars.VariableParser;
+import org.xson.tangyuan.ognl.vars.parser.NormalParser;
 
 import com.alibaba.fastjson.JSON;
 
@@ -35,7 +35,8 @@ public class TokenParserUtil {
 						offset = start + openToken.length();
 						String content = new String(src, offset, end - offset);
 						// builder.append(handler.handleToken(content));
-						unitlist.add(VariableParser.parse(content, false));
+						// unitlist.add(VariableParser.parse(content, false));
+						unitlist.add(new NormalParser().parse(content));
 
 						offset = end + closeToken.length();
 						hasToken = true;

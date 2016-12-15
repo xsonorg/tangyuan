@@ -7,6 +7,7 @@ import java.util.Map.Entry;
 import org.xson.common.object.XCO;
 import org.xson.tangyuan.cache.vo.CacheVo;
 import org.xson.tangyuan.datasource.DataSourceManager;
+import org.xson.tangyuan.executor.ServiceContextFactory;
 import org.xson.tangyuan.executor.monitor.MonitorWriter;
 import org.xson.tangyuan.executor.monitor.SqlServiceMonitor;
 import org.xson.tangyuan.logging.Log;
@@ -17,36 +18,46 @@ import org.xson.tangyuan.task.AsyncTaskThread;
 import org.xson.tangyuan.type.TypeHandlerRegistry;
 import org.xson.tangyuan.util.LicensesHelper;
 import org.xson.tangyuan.xml.XmlConfigurationBuilder;
-import org.xson.tangyuan.xml.node.AbstractSqlNode;
+import org.xson.tangyuan.xml.XmlExtendBuilder;
+import org.xson.tangyuan.xml.node.AbstractServiceNode;
+import org.xson.tangyuan.xml.node.AbstractServiceNode.TangYuanServiceType;
 
 public class TangYuanContainer {
 
-	private Log									log						= LogFactory.getLog(getClass());
+	private Log										log						= LogFactory.getLog(getClass());
 
-	private static TangYuanContainer			instance				= new TangYuanContainer();
+	private static TangYuanContainer				instance				= new TangYuanContainer();
 
-	private DataSourceManager					dataSourceManager		= null;
-	private final Map<String, AbstractSqlNode>	sqlServices				= new HashMap<String, AbstractSqlNode>();
-	private Map<String, ShardingDefVo>			shardingDefMap;
-	private Class<?>							defaultResultType		= XCO.class;
-	private int									defaultFetchSize		= 100;
-	private TypeHandlerRegistry					typeHandlerRegistry		= null;
-	private AsyncTaskThread						asyncTaskThread			= null;
-	private Map<String, CacheVo>				cacheVoMap				= null;
-	// private MongoDataSource mongoDataSource = null;
-	// private MongoActuator mongoActuator = null;
+	private DataSourceManager						dataSourceManager		= null;
+	// private final Map<String, AbstractSqlNode> sqlServices = new HashMap<String, AbstractSqlNode>();
+	private final Map<String, AbstractServiceNode>	tangyuanServices		= new HashMap<String, AbstractServiceNode>();
+	private Map<String, ShardingDefVo>				shardingDefMap;
+	private Class<?>								defaultResultType		= XCO.class;
+	private int										defaultFetchSize		= 100;
+	private TypeHandlerRegistry						typeHandlerRegistry		= null;
+	private AsyncTaskThread							asyncTaskThread			= null;
+	private Map<String, CacheVo>					cacheVoMap				= null;
 
-	private int									sqlServiceErrorCode		= -1;										// 错误信息编码
-	private String								sqlServiceErrorMessage	= "服务异常";
+	private Map<String, ServiceContextFactory>		scFactoryMap			= new HashMap<String, ServiceContextFactory>();
 
-	private boolean								licenses				= true;
+	private int										sqlServiceErrorCode		= -1;											// 错误信息编码
+	private String									sqlServiceErrorMessage	= "服务异常";
+
+	private boolean									licenses				= true;
 
 	// 服务监控
-	private boolean								serviceMonitor			= false;
-	private SqlServiceMonitor					monitorThread			= null;
-	public long									monitorSleepTime		= 2000L;
-	public long									monitorIntervalTime		= 200L;
-	// private long monitorSleepTime = null;
+	private boolean									serviceMonitor			= false;
+	private SqlServiceMonitor						monitorThread			= null;
+	public long										monitorSleepTime		= 2000L;
+	public long										monitorIntervalTime		= 200L;
+
+	// public org.xson.timer.client.TimerContainer timerClientContainer = null;
+	// public org.xson.timer.server.TimerContainer timerServerContainer = null;
+
+	/**
+	 * 扩展插件解析器集合
+	 */
+	private Map<String, XmlExtendBuilder>			builderMap				= new HashMap<String, XmlExtendBuilder>();
 
 	private TangYuanContainer() {
 	}
@@ -63,12 +74,20 @@ public class TangYuanContainer {
 		this.dataSourceManager = dataSourceManager;
 	}
 
-	public void addSqlService(AbstractSqlNode service) {
-		sqlServices.put(service.getServiceKey(), service);
+	public void addService(AbstractServiceNode service) {
+		tangyuanServices.put(service.getServiceKey(), service);
 	}
 
-	public AbstractSqlNode getSqlService(String serviceKey) {
-		return sqlServices.get(serviceKey);
+	public ServiceContextFactory getContextFactory(TangYuanServiceType type) {
+		return scFactoryMap.get(type.name());
+	}
+
+	public void registerContextFactory(TangYuanServiceType type, ServiceContextFactory factory) {
+		scFactoryMap.put(type.name(), factory);
+	}
+
+	public AbstractServiceNode getService(String serviceKey) {
+		return tangyuanServices.get(serviceKey);
 	}
 
 	public ShardingDefVo getShardingDef(String key) {
@@ -99,14 +118,6 @@ public class TangYuanContainer {
 		asyncTaskThread.addTask(task);
 	}
 
-	// public MongoDataSource getMongoDataSource(String dsKey) {
-	// return mongoDataSource;
-	// }
-	//
-	// public MongoActuator getMongoActuator() {
-	// return mongoActuator;
-	// }
-
 	public int getSqlServiceErrorCode() {
 		return sqlServiceErrorCode;
 	}
@@ -127,6 +138,10 @@ public class TangYuanContainer {
 		return licenses;
 	}
 
+	public Map<String, XmlExtendBuilder> getBuilderMap() {
+		return builderMap;
+	}
+
 	public void start(String resource) throws Throwable {
 
 		try {
@@ -137,7 +152,6 @@ public class TangYuanContainer {
 		} catch (Exception e) {
 		}
 
-		// InputStream inputStream = Resources.getResourceAsStream(resource);
 		XmlConfigurationBuilder xmlConfigurationBuilder = new XmlConfigurationBuilder(resource);
 		xmlConfigurationBuilder.parse();
 
@@ -146,14 +160,13 @@ public class TangYuanContainer {
 		asyncTaskThread = new AsyncTaskThread();
 		asyncTaskThread.start();
 
-		log.info("tangyuan version: " + Version.getVersionNumber());
+		builderMap.clear();
+		builderMap = null;
+
+		log.info("tangyuan version: " + Version.getVersion());
 	}
 
 	public void startMonitor(MonitorWriter writer) {
-		// if (isServiceMonitor()) {
-		// this.monitorThread = new SqlServiceMonitor(writer);
-		// this.monitorThread.start();
-		// }
 		if (!this.serviceMonitor) {
 			this.serviceMonitor = true;
 			this.monitorThread = new SqlServiceMonitor(writer);
@@ -174,5 +187,24 @@ public class TangYuanContainer {
 				}
 			}
 		}
+
+		org.xson.timer.client.TimerContainer.getInstance().stop();
+		org.xson.timer.server.TimerContainer.getInstance().stop();
 	}
+
+	// private MongoDataSource mongoDataSource = null;
+	// private MongoActuator mongoActuator = null;
+	// public void addSqlService(AbstractSqlNode service) {
+	// sqlServices.put(service.getServiceKey(), service);
+	// }
+	// public AbstractSqlNode getSqlService(String serviceKey) {
+	// return sqlServices.get(serviceKey);
+	// }
+	// public MongoDataSource getMongoDataSource(String dsKey) {
+	// return mongoDataSource;
+	// }
+	// public MongoActuator getMongoActuator() {
+	// return mongoActuator;
+	// }
+
 }

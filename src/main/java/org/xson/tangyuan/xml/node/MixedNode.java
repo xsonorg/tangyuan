@@ -4,17 +4,17 @@ import java.util.List;
 
 import org.xson.tangyuan.executor.ServiceContext;
 
-public class MixedNode implements SqlNode {
+public class MixedNode implements TangYuanNode {
 
-	private List<SqlNode>	contents;
+	private List<TangYuanNode> contents;
 
-	public MixedNode(List<SqlNode> contents) {
+	public MixedNode(List<TangYuanNode> contents) {
 		this.contents = contents;
 	}
 
 	@Override
 	public boolean execute(ServiceContext context, Object arg) throws Throwable {
-		for (SqlNode sqlNode : contents) {
+		for (TangYuanNode sqlNode : contents) {
 			sqlNode.execute(context, arg);
 		}
 		return true;

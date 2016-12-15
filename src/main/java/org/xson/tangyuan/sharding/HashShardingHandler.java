@@ -1,12 +1,12 @@
 package org.xson.tangyuan.sharding;
 
-import org.xson.tangyuan.ognl.vars.VariableVo;
+import org.xson.tangyuan.ognl.vars.Variable;
 
 public class HashShardingHandler extends AbstractShardingHandler {
 
 	@Override
 	public ShardingResult selectDataSourceAndTable(ShardingDefVo defVo, ShardingArgVo argVo, Object arg) {
-		VariableVo[] keywords = argVo.getKeywords();
+		Variable[] keywords = argVo.getKeywords();
 		if (null == keywords) {
 			keywords = defVo.getKeywords();
 		}
@@ -23,7 +23,7 @@ public class HashShardingHandler extends AbstractShardingHandler {
 		return getResult(tableIndex, dbIndex, defVo, argVo);
 	}
 
-	private int getHashCode(VariableVo varVo, Object arg) {
+	private int getHashCode(Variable varVo, Object arg) {
 		Object value = varVo.getValue(arg);
 		if (null == value) {
 			throw new ShardingException("分库分表对象值为空");

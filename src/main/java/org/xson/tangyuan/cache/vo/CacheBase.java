@@ -7,8 +7,8 @@ import java.util.Map;
 
 import org.xson.common.object.XCO;
 import org.xson.tangyuan.cache.CacheException;
-import org.xson.tangyuan.ognl.vars.VariableParser;
-import org.xson.tangyuan.ognl.vars.VariableVo;
+import org.xson.tangyuan.ognl.vars.Variable;
+import org.xson.tangyuan.ognl.vars.warper.DefaultValueParserWarper;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
@@ -91,7 +91,8 @@ public class CacheBase {
 					// keyList.add(new CacheKey(4, str));
 					// keyList.add(new CacheKey(4, VariableParser.parse(str,
 					// false)));
-					keyList.add(new CacheKey(4, VariableParser.parse(str, true)));
+					// keyList.add(new CacheKey(4, VariableParser.parse(str, true)));
+					keyList.add(new CacheKey(4, new DefaultValueParserWarper().parse(str)));
 					simple = false;
 					// i = position + 1;
 					i = position;// fix bug
@@ -153,11 +154,11 @@ public class CacheBase {
 					if (null == obj) {
 						throw new CacheException("变量模式下参数不能为空");
 					} else if (obj instanceof XCO) {
-						builder.append(((VariableVo) cacheKey.name).getValue(obj));
+						builder.append(((Variable) cacheKey.name).getValue(obj));
 					} else if (obj instanceof Map) {
-						builder.append(((VariableVo) cacheKey.name).getValue(obj));
+						builder.append(((Variable) cacheKey.name).getValue(obj));
 					} else if (obj instanceof JSONObject) {
-						builder.append(((JSONObject) obj).get(((VariableVo) cacheKey.name).getOriginal()));
+						builder.append(((JSONObject) obj).get(((Variable) cacheKey.name).getOriginal()));
 					} else {
 						throw new CacheException("不支持的key参数类型:" + obj.getClass());
 					}
@@ -167,7 +168,7 @@ public class CacheBase {
 		}
 	}
 
-	private char	hexDigits[]	= { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+	private char hexDigits[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 
 	private String MD5(String s) {
 		return MD5(s.getBytes());

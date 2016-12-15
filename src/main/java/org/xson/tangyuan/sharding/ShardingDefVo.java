@@ -1,6 +1,6 @@
 package org.xson.tangyuan.sharding;
 
-import org.xson.tangyuan.ognl.vars.VariableVo;
+import org.xson.tangyuan.ognl.vars.Variable;
 
 public class ShardingDefVo {
 
@@ -15,7 +15,7 @@ public class ShardingDefVo {
 	private int				tableCount;
 	private int				tableCapacity;
 	// private String[] keywords;
-	private VariableVo[]	keywords;
+	private Variable[]		keywords;
 	private boolean			tableNameIndexIncrement;	// 表名称索引是否递增
 	private ShardingHandler	handler;					// impl="mySharding"
 	private int				dataSourceCount;			// 物理数据源数量
@@ -28,8 +28,9 @@ public class ShardingDefVo {
 	// 默认的表名: 选择失败的时候使用
 	// private String defaultTable;
 
-	public ShardingDefVo(String table, String dataSource, ShardingMode mode, int dbCount, int tableCount, int tableCapacity, VariableVo[] keywords, boolean tableNameIndexIncrement,
-			ShardingHandler handler, int dataSourceCount, boolean dataSourceGroup, boolean requireKeyword, String defaultDataSource) {
+	public ShardingDefVo(String table, String dataSource, ShardingMode mode, int dbCount, int tableCount, int tableCapacity, Variable[] keywords,
+			boolean tableNameIndexIncrement, ShardingHandler handler, int dataSourceCount, boolean dataSourceGroup, boolean requireKeyword,
+			String defaultDataSource) {
 		this.table = table;
 		this.dataSource = dataSource;
 		this.mode = mode;
@@ -69,7 +70,7 @@ public class ShardingDefVo {
 		return tableCapacity;
 	}
 
-	public VariableVo[] getKeywords() {
+	public Variable[] getKeywords() {
 		return keywords;
 	}
 

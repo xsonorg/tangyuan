@@ -10,8 +10,8 @@ import org.xson.tangyuan.datasource.DataSourceGroupVo;
 import org.xson.tangyuan.datasource.DataSourceVo;
 import org.xson.tangyuan.logging.Log;
 import org.xson.tangyuan.logging.LogFactory;
-import org.xson.tangyuan.ognl.vars.VariableParser;
-import org.xson.tangyuan.ognl.vars.VariableVo;
+import org.xson.tangyuan.ognl.vars.Variable;
+import org.xson.tangyuan.ognl.vars.parser.NormalParser;
 import org.xson.tangyuan.sharding.HashShardingHandler;
 import org.xson.tangyuan.sharding.ModShardingHandler;
 import org.xson.tangyuan.sharding.RandomShardingHandler;
@@ -158,13 +158,14 @@ public class XmlShardingBuilder {
 				requireKeyword = false;
 			}
 
-			VariableVo[] keywords = null;
+			Variable[] keywords = null;
 			String keys = StringUtils.trim(xNode.getStringAttribute("keys"));
 			if (null != keys) {
 				String[] array = keys.split(",");
-				keywords = new VariableVo[array.length];
+				keywords = new Variable[array.length];
 				for (int j = 0; j < array.length; j++) {
-					keywords[j] = VariableParser.parse(array[j].trim(), false);
+					// keywords[j] = VariableParser.parse(array[j].trim(), false);
+					keywords[j] = new NormalParser().parse(array[j].trim());
 				}
 			}
 

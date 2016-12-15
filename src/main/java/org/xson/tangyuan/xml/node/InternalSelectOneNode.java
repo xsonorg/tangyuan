@@ -3,6 +3,7 @@ package org.xson.tangyuan.xml.node;
 import org.xson.common.object.XCO;
 import org.xson.tangyuan.cache.vo.CacheUseVo;
 import org.xson.tangyuan.executor.ServiceContext;
+import org.xson.tangyuan.executor.SqlServiceContext;
 import org.xson.tangyuan.logging.Log;
 import org.xson.tangyuan.logging.LogFactory;
 import org.xson.tangyuan.ognl.Ognl;
@@ -17,7 +18,7 @@ public class InternalSelectOneNode extends AbstractSqlNode {
 	private String		resultKey;
 	private CacheUseVo	cacheUse;
 
-	public InternalSelectOneNode(String dsKey, String resultKey, SqlNode sqlNode, Class<?> resultType, CacheUseVo cacheUse) {
+	public InternalSelectOneNode(String dsKey, String resultKey, TangYuanNode sqlNode, Class<?> resultType, CacheUseVo cacheUse) {
 		this.dsKey = dsKey;
 		this.resultKey = resultKey;
 		this.sqlNode = sqlNode;
@@ -27,20 +28,22 @@ public class InternalSelectOneNode extends AbstractSqlNode {
 	}
 
 	@Override
-	public boolean execute(ServiceContext context, Object arg) throws Throwable {
+	public boolean execute(ServiceContext serviceContext, Object arg) throws Throwable {
+
+		SqlServiceContext context = serviceContext.getSqlServiceContext();
 
 		// 1. cache使用
 		if (null != cacheUse) {
 			Object result = cacheUse.getObject(arg);
 			if (null != result) {
-				context.setResult(result);
+				serviceContext.setResult(result);
 				return true;
 			}
 		}
 
 		context.resetExecEnv();
 
-		sqlNode.execute(context, arg); // 获取sql
+		sqlNode.execute(serviceContext, arg); // 获取sql
 		if (log.isInfoEnabled()) {
 			context.parseSqlLog();
 		}

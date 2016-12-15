@@ -1,8 +1,7 @@
 package org.xson.tangyuan.xml.node;
 
-import java.sql.SQLException;
-
 import org.xson.tangyuan.executor.ServiceContext;
+import org.xson.tangyuan.executor.SqlServiceContext;
 import org.xson.tangyuan.logging.Log;
 import org.xson.tangyuan.logging.LogFactory;
 import org.xson.tangyuan.transaction.XTransactionDefinition;
@@ -11,34 +10,34 @@ public class TransGroupNode extends AbstractSqlNode {
 
 	private static Log log = LogFactory.getLog(TransGroupNode.class);
 
-	public TransGroupNode(XTransactionDefinition txDef, SqlNode sqlNode) {
+	public TransGroupNode(XTransactionDefinition txDef, TangYuanNode sqlNode) {
 		this.sqlNode = sqlNode;
 		this.txDef = txDef;
 	}
 
 	@Override
-	public boolean execute(ServiceContext context, Object arg) throws SQLException {
-		try {
-			// 这里只是创建事务
-			context.beforeExecute(this, false);
-			log.info("start trans: " + this.txDef.getId());
-		} catch (Throwable e) {
-			// 这里要具体处理事务了, 而且这里一定是独立的新事物
-			log.error("TransGroup Exception Before", e);
-			return true;
-		}
+	public boolean execute(ServiceContext serviceContext, Object arg) throws Throwable {
+		SqlServiceContext sqlContext = serviceContext.getSqlServiceContext();
 
+		boolean createdTranscation = false;
 		try {
-			sqlNode.execute(context, arg);
-			// 这里做不确定的提交
-			context.commit(false);
-			context.afterExecute(this);
+			log.info("start transGroup: " + this.txDef.getId());
+			// 1. 开启事务, 这里只是创建事务
+			sqlContext.beforeExecute(this, false);
+			createdTranscation = true;
+			// 2. 执行服务
+			sqlNode.execute(serviceContext, arg);
+			// 3. 提交:确定的提交
+			sqlContext.commit(true);
+			createdTranscation = false;
+			sqlContext.afterExecute(this);
 		} catch (Throwable e) {
-			// 这里要具体处理事务了, 而且这里一定是独立的新事物
-			context.rollback();
-			log.error("TransGroup Exception Among", e);
+			if (createdTranscation) {
+				// 只是回滚当前的事务
+				sqlContext.rollbackCurrentTransaction();
+			}
+			log.error("transGroup exception", e);
 		}
-
 		return true;
 	}
 }

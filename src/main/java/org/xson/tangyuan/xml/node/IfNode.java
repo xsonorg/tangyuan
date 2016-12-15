@@ -4,20 +4,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.xson.tangyuan.executor.ServiceContext;
-import org.xson.tangyuan.ognl.expr.ExprGroupVo;
+import org.xson.tangyuan.ognl.vars.vo.LogicalVariable;
 import org.xson.tangyuan.xml.XmlParseException;
 
-public class IfNode implements SqlNode {
+public class IfNode implements TangYuanNode {
 
-	private ExprGroupVo		test;
+	private LogicalVariable	test;
 
-	private SqlNode			sqlNode;
+	private TangYuanNode	sqlNode;
 
 	private List<IfNode>	elseIfList;
 
 	private boolean			hasElseNode	= false;
 
-	public IfNode(SqlNode sqlNode, ExprGroupVo test) {
+	public IfNode(TangYuanNode sqlNode, LogicalVariable test) {
 		this.sqlNode = sqlNode;
 		this.test = test;
 	}
@@ -49,14 +49,15 @@ public class IfNode implements SqlNode {
 	 */
 	@Override
 	public boolean execute(ServiceContext context, Object arg) throws Throwable {
-		// 这里可以认识全部是IF, 表达式通过:true, 否则:false
+		// 这里可以认为全部是IF, 表达式通过:true, 否则:false
 		if (null == test || test.getResult(arg)) {
 			sqlNode.execute(context, arg);
 			return true;
 		} else if (null != elseIfList) {
 			for (IfNode ifNode : elseIfList) {
 				if (ifNode.execute(context, arg)) {
-					break;// TODO 是否return true也可
+					// break;// TODO 是否return true也可
+					return true;
 				}
 			}
 		}

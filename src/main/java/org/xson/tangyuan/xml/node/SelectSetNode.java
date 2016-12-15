@@ -7,6 +7,7 @@ import java.util.Map;
 import org.xson.common.object.XCO;
 import org.xson.tangyuan.cache.vo.CacheUseVo;
 import org.xson.tangyuan.executor.ServiceContext;
+import org.xson.tangyuan.executor.SqlServiceContext;
 import org.xson.tangyuan.executor.SqlServiceExceptionInfo;
 import org.xson.tangyuan.logging.Log;
 import org.xson.tangyuan.logging.LogFactory;
@@ -24,8 +25,8 @@ public class SelectSetNode extends AbstractSqlNode {
 
 	private CacheUseVo	cacheUse;
 
-	public SelectSetNode(String id, String ns, String serviceKey, Class<?> resultType, MappingVo resultMap, String dsKey, Integer fetchSize,
-			XTransactionDefinition txDef, SqlNode sqlNode, CacheUseVo cacheUse) {
+	public SelectSetNode(String id, String ns, String serviceKey, Class<?> resultType, MappingVo resultMap, String dsKey, Integer fetchSize, XTransactionDefinition txDef,
+			TangYuanNode sqlNode, CacheUseVo cacheUse) {
 
 		this.id = id;
 		this.ns = ns;
@@ -45,59 +46,57 @@ public class SelectSetNode extends AbstractSqlNode {
 	}
 
 	@Override
-	public boolean execute(ServiceContext context, Object arg) throws Throwable {
+	public boolean execute(ServiceContext serviceContext, Object arg) throws Throwable {
+		SqlServiceContext sqlContext = serviceContext.getSqlServiceContext();
+
 		// 1. cache使用
 		if (null != cacheUse) {
 			Object result = cacheUse.getObject(arg);
 			if (null != result) {
-				context.setResult(result);
+				serviceContext.setResult(result);
 				return true;
 			}
 		}
 
-		// 2. 清理和重置执行环境
-		context.resetExecEnv();
-
-		long startTime = 0L;
-		try {
-			// 3. 解析SQL
-			sqlNode.execute(context, arg); // 获取sql
-			if (log.isInfoEnabled()) {
-				context.parseSqlLog();
-			}
-			// 3.1 开启事务
-			startTime = System.currentTimeMillis();
-			context.beforeExecute(this); // 开启事务异常, 可认为是事务之前的异常
-		} catch (Throwable e) {
-			// 考虑此处设置当前事务的特征, 上层统一处理(无论如何)
-			// SqlServiceException ex = new SqlServiceException("简单服务,事务启动之前发生异常", e);
-			// ex.setExPosition(ExceptionPosition.BEFORE);
-			// ex.setNewTranscation(txDef.isNewTranscation());
-			// throw ex;
-			context.setExceptionInfo(new SqlServiceExceptionInfo(txDef.isNewTranscation(), false));
-			throw e;
-		}
+		// 1. 清理和重置执行环境
+		sqlContext.resetExecEnv();
 
 		Object result = null;
+		boolean createdTranscation = false;
+		long startTime = 0L;
 		try {
+			// 2. 解析SQL
+			sqlNode.execute(serviceContext, arg); // 获取sql
+			if (log.isInfoEnabled()) {
+				sqlContext.parseSqlLog();
+			}
+
+			// 3. 开启事务
+			startTime = System.currentTimeMillis();
+			sqlContext.beforeExecute(this); // 开启事务异常, 可认为是事务之前的异常
+			createdTranscation = true; // *
+
 			// 4. 执行SQL
 			if (XCO.class == resultType) {
-				result = context.executeSelectSetListXCO(this, this.resultMap, fetchSize);
+				result = sqlContext.executeSelectSetListXCO(this, this.resultMap, fetchSize);
 			} else {
-				result = context.executeSelectSetListMap(this, this.resultMap, fetchSize);
+				result = sqlContext.executeSelectSetListMap(this, this.resultMap, fetchSize);
 			}
-			context.setResult(result);
-			context.commit(false); // 这里做不确定的提交
-			context.afterExecute(this);
+
+			// 5. 提交:这里做不确定的提交
+			sqlContext.commit(false);
+			if (txDef.isNewTranscation()) {
+				createdTranscation = false; // *
+			}
+			sqlContext.afterExecute(this);
+
+			// 6. 设置结果
+			serviceContext.setResult(result);
 			if (log.isInfoEnabled()) {
 				log.info("sql execution time: " + getSlowServiceLog(startTime));
 			}
 		} catch (Throwable e) {
-			// SqlServiceException ex = new SqlServiceException("简单服务,事务处理中异常", e);
-			// ex.setExPosition(ExceptionPosition.AMONG);
-			// ex.setNewTranscation(txDef.isNewTranscation());
-			// throw ex;
-			context.setExceptionInfo(new SqlServiceExceptionInfo(txDef.isNewTranscation(), true));
+			serviceContext.setExceptionInfo(new SqlServiceExceptionInfo(txDef.isNewTranscation(), createdTranscation));
 			throw e;
 		}
 
@@ -160,10 +159,6 @@ public class SelectSetNode extends AbstractSqlNode {
 				return value;
 			}
 		} catch (Throwable e) {
-			// SqlServiceException ex = new SqlServiceException("简单服务,事务处理后异常", e);
-			// ex.setExPosition(ExceptionPosition.AFTER);
-			// ex.setNewTranscation(txDef.isNewTranscation());
-			// throw ex;
 			// 这里认为是没有没开启, 因为只有独立事务,执行中才需要回滚当前，其他都是回滚所有
 			context.setExceptionInfo(new SqlServiceExceptionInfo(txDef.isNewTranscation(), false));
 			throw e;

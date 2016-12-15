@@ -44,7 +44,7 @@ public abstract class AbstractCache implements ICache {
 		return null;
 	}
 
-	protected String	keyEncode	= "UTF-8";
+	protected String keyEncode = "UTF-8";
 
 	protected String parseKey(Object key) {
 		if (null == key) {

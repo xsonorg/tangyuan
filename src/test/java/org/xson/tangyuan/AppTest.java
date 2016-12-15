@@ -14,108 +14,54 @@ import com.alibaba.fastjson.JSON;
 public class AppTest {
 
 	protected void call1() {
-		try {
-			ServiceActuator.begin();
-			Map<String, Object> data = new HashMap<String, Object>();
-			data.put("id", 1);
+		Map<String, Object> data = new HashMap<String, Object>();
+		data.put("id", 1);
 
-			data.put("array", new Object[] { new Date() });
+		data.put("array", new Object[] { new Date() });
 
-			data.put("name", "王欢");
+		data.put("name", "王欢");
 
-			data.put("ids", new Long[] { 1L, 2L, 3L });
+		data.put("ids", new Long[] { 1L, 2L, 3L });
 
-			Object result = ServiceActuator.execute("sql-1", data);
-			System.out.println(JSON.toJSONString(result));
-		} finally {
-			try {
-				ServiceActuator.end();
-			} catch (Throwable e) {
-				e.printStackTrace();
-			}
-		}
+		Object result = ServiceActuator.execute("sql-1", data);
+		System.out.println(JSON.toJSONString(result));
 	}
 
 	protected void call2() {
-		try {
-			ServiceActuator.begin();
-			XCO request = new XCO();
-			request.setLongValue("id", 1L);
-			List<XCO> result = ServiceActuator.execute("select2", request);
-			System.out.println(result.get(0).toXMLString());
-		} finally {
-			try {
-				ServiceActuator.end();
-			} catch (Throwable e) {
-				e.printStackTrace();
-			}
-		}
+		XCO request = new XCO();
+		request.setLongValue("id", 1L);
+		List<XCO> result = ServiceActuator.execute("select2", request);
+		System.out.println(result.get(0).toXMLString());
 	}
 
 	protected void call3() {
-		try {
-			ServiceActuator.begin();
-			XCO request = new XCO();
-			// request.setLongValue("id", 1L);
-			XCO result = ServiceActuator.execute("select3", request);
-			System.out.println(result.toXMLString());
-		} finally {
-			try {
-				ServiceActuator.end();
-			} catch (Throwable e) {
-				e.printStackTrace();
-			}
-		}
+		XCO request = new XCO();
+		// request.setLongValue("id", 1L);
+		XCO result = ServiceActuator.execute("select3", request);
+		System.out.println(result.toXMLString());
 	}
 
 	protected void call4() {
-		try {
-			ServiceActuator.begin();
-			XCO request = new XCO();
-			request.setStringValue("name", "高鹏");
-			request.setDateTimeValue("time1", new Date());
-			Integer result = ServiceActuator.execute("insert1", request);
-			System.out.println(result);
-		} finally {
-			try {
-				ServiceActuator.end();
-			} catch (Throwable e) {
-				e.printStackTrace();
-			}
-		}
+		XCO request = new XCO();
+		request.setStringValue("name", "高鹏");
+		request.setDateTimeValue("time1", new Date());
+		Integer result = ServiceActuator.execute("insert1", request);
+		System.out.println(result);
 	}
 
 	protected void call5() {
-		try {
-			ServiceActuator.begin();
-			XCO request = new XCO();
-			request.setStringValue("name", "高鹏");
-			Object result = ServiceActuator.execute("insert2", request);
-			System.out.println(result);
-		} finally {
-			try {
-				ServiceActuator.end();
-			} catch (Throwable e) {
-				e.printStackTrace();
-			}
-		}
+		XCO request = new XCO();
+		request.setStringValue("name", "高鹏");
+		Object result = ServiceActuator.execute("insert2", request);
+		System.out.println(result);
 	}
 
 	protected void call51() {
-		try {
-			ServiceActuator.begin();
-			XCO request = new XCO();
-			String[] var = { "高鹏1", "高鹏2", "高鹏3", "高鹏4", "高鹏5" };
-			request.setStringArrayValue("names", var);
-			long[] result = ServiceActuator.execute("insert3", request);
-			System.out.println(result.getClass().getName() + "\n" + JSON.toJSONString(result));
-		} finally {
-			try {
-				ServiceActuator.end();
-			} catch (Throwable e) {
-				e.printStackTrace();
-			}
-		}
+		XCO request = new XCO();
+		String[] var = { "高鹏1", "高鹏2", "高鹏3", "高鹏4", "高鹏5" };
+		request.setStringArrayValue("names", var);
+		long[] result = ServiceActuator.execute("insert3", request);
+		System.out.println(result.getClass().getName() + "\n" + JSON.toJSONString(result));
 	}
 
 	protected void call52() throws Exception {

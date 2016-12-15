@@ -3,7 +3,7 @@ package org.xson.tangyuan.xml.node;
 import org.xson.tangyuan.executor.ServiceContext;
 import org.xson.tangyuan.ognl.Ognl;
 
-public class SetVarNode implements SqlNode {
+public class SetVarNode implements TangYuanNode {
 
 	// 只需要支持最简单的key
 	private String	key;

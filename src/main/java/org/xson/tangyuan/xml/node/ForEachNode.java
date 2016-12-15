@@ -4,41 +4,28 @@ import java.util.Collection;
 
 import org.xson.tangyuan.TangYuanException;
 import org.xson.tangyuan.executor.ServiceContext;
-import org.xson.tangyuan.logging.Log;
-import org.xson.tangyuan.logging.LogFactory;
 import org.xson.tangyuan.ognl.Ognl;
-import org.xson.tangyuan.ognl.vars.VariableVo;
+import org.xson.tangyuan.ognl.vars.Variable;
 
-public class ForEachNode implements SqlNode {
+public abstract class ForEachNode implements TangYuanNode {
 
-	protected static Log	log	= LogFactory.getLog(ForEachNode.class);
-
-	private SqlNode			sqlNode;
+	protected TangYuanNode	sqlNode;
 
 	/**
 	 * 集合变量, 从那个集合中遍历, 可为空,但是此种情况下必须有sqlNode
 	 */
-	private VariableVo		collection;
+	protected Variable		collection;
 
 	/**
-	 * 集合中的索引
+	 * 集合中索引的变量名称
 	 */
-	private String			index;
+	protected String		index;
 
-	private String			open;
+	protected String		open;
 
-	private String			close;
+	protected String		close;
 
-	private String			separator;
-
-	public ForEachNode(SqlNode sqlNode, VariableVo collection, String index, String open, String close, String separator) {
-		this.sqlNode = sqlNode;
-		this.collection = collection;
-		this.index = index;
-		this.open = open;
-		this.close = close;
-		this.separator = separator;
-	}
+	protected String		separator;
 
 	@Override
 	public boolean execute(ServiceContext context, Object arg) throws Throwable {
@@ -78,26 +65,18 @@ public class ForEachNode implements SqlNode {
 		}
 
 		append(context, close);
-
-		// log.info("ForEach Length:" + count);
-
 		return true;
 	}
 
-	private void append(ServiceContext context, String str) {
-		if (null != str && str.length() > 0) {
-			context.addSql(str);
-		}
-	}
+	protected abstract void append(ServiceContext context, String str);
 
 	private int foreachCollection(Object target, ServiceContext context, Object arg) throws Throwable {
 		Collection<?> collection = (Collection<?>) target;
 		int count = 0;
 		for (Object item : collection) {
 			if (null == item) {
-				throw new TangYuanException("foreache中某一元素为空");// TODO
+				throw new TangYuanException("collection element[" + count + "] is null");// TODO
 			}
-			// arg.put(index, count);
 			Ognl.setValue(arg, index, count);
 			if (count++ > 0) {
 				append(context, separator);
@@ -115,7 +94,6 @@ public class ForEachNode implements SqlNode {
 		Object[] array = (Object[]) target;
 		int count = 0;
 		for (int i = 0; i < array.length; i++) {
-			// arg.put(index, count);
 			Ognl.setValue(arg, index, count);
 			if (count++ > 0) {
 				append(context, separator);
@@ -128,7 +106,6 @@ public class ForEachNode implements SqlNode {
 	private int foreachIntArray(Object target, ServiceContext context, Object arg) throws Throwable {
 		int[] array = (int[]) target;
 		for (int i = 0; i < array.length; i++) {
-			// arg.put(index, i);
 			Ognl.setValue(arg, index, i);
 			if (i > 0) {
 				append(context, separator);
@@ -141,7 +118,6 @@ public class ForEachNode implements SqlNode {
 	private int foreachLongArray(Object target, ServiceContext context, Object arg) throws Throwable {
 		long[] array = (long[]) target;
 		for (int i = 0; i < array.length; i++) {
-			// arg.put(index, i);
 			Ognl.setValue(arg, index, i);
 			if (i > 0) {
 				append(context, separator);
@@ -154,7 +130,6 @@ public class ForEachNode implements SqlNode {
 	private int foreachBooleanArray(Object target, ServiceContext context, Object arg) throws Throwable {
 		boolean[] array = (boolean[]) target;
 		for (int i = 0; i < array.length; i++) {
-			// arg.put(index, i);
 			Ognl.setValue(arg, index, i);
 			if (i > 0) {
 				append(context, separator);
@@ -167,7 +142,6 @@ public class ForEachNode implements SqlNode {
 	private int foreachByteArray(Object target, ServiceContext context, Object arg) throws Throwable {
 		byte[] array = (byte[]) target;
 		for (int i = 0; i < array.length; i++) {
-			// arg.put(index, i);
 			Ognl.setValue(arg, index, i);
 			if (i > 0) {
 				append(context, separator);
@@ -180,7 +154,6 @@ public class ForEachNode implements SqlNode {
 	private int foreachCharArray(Object target, ServiceContext context, Object arg) throws Throwable {
 		char[] array = (char[]) target;
 		for (int i = 0; i < array.length; i++) {
-			// arg.put(index, i);
 			Ognl.setValue(arg, index, i);
 			if (i > 0) {
 				append(context, separator);
@@ -193,7 +166,6 @@ public class ForEachNode implements SqlNode {
 	private int foreachDoubleArray(Object target, ServiceContext context, Object arg) throws Throwable {
 		double[] array = (double[]) target;
 		for (int i = 0; i < array.length; i++) {
-			// arg.put(index, i);
 			Ognl.setValue(arg, index, i);
 			if (i > 0) {
 				append(context, separator);

@@ -1,6 +1,5 @@
 package org.xson.tangyuan.xml.node;
 
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -16,70 +15,65 @@ import org.xson.tangyuan.cache.vo.CacheVo;
 import org.xson.tangyuan.logging.Log;
 import org.xson.tangyuan.logging.LogFactory;
 import org.xson.tangyuan.mapping.MappingVo;
-import org.xson.tangyuan.ognl.expr.TestExprParser;
-import org.xson.tangyuan.ognl.vars.VariableParser;
-import org.xson.tangyuan.ognl.vars.VariableVo;
+import org.xson.tangyuan.ognl.vars.Variable;
+import org.xson.tangyuan.ognl.vars.parser.LogicalExprParser;
+import org.xson.tangyuan.ognl.vars.parser.NormalParser;
 import org.xson.tangyuan.transaction.XTransactionDefinition;
 import org.xson.tangyuan.util.ClassUtils;
-import org.xson.tangyuan.util.DateUtils;
-import org.xson.tangyuan.util.NumberUtils;
 import org.xson.tangyuan.util.StringUtils;
-import org.xson.tangyuan.xml.XPathParser;
-import org.xson.tangyuan.xml.XmlConfigurationBuilder;
-import org.xson.tangyuan.xml.XmlMapperBuilder;
+import org.xson.tangyuan.xml.XmlNodeBuilder;
 import org.xson.tangyuan.xml.XmlNodeWrapper;
+import org.xson.tangyuan.xml.XmlParseContext;
 import org.xson.tangyuan.xml.XmlParseException;
 import org.xson.tangyuan.xml.node.CallNode.CallMode;
 import org.xson.tangyuan.xml.node.CallNode.CallNodeParameterItem;
 import org.xson.tangyuan.xml.node.ReturnNode.ReturnItem;
 
-public class XMLSqlNodeBuilder {
+public class XMLSqlNodeBuilder extends XmlNodeBuilder {
 
-	private Log						log						= LogFactory.getLog(getClass());
-	private XPathParser				parser					= null;
-	private String					ns						= "";
-	private XmlConfigurationBuilder	xmlConfigurationBuilder	= null;
-	private XmlMapperBuilder		xmlMapperBuilder		= null;
-	private XmlNodeWrapper			root					= null;
-	/**
-	 * <SQL>节点MAP
-	 */
-	private Map<String, SqlNode>	integralRefMap			= null;
-	/**
-	 * 服务节点
-	 */
-	private Map<String, Integer>	integralServiceMap		= null;
-	private String					dsKeyWithSqlService		= null;
-	private Class<?>				serviceResultType		= null;
+	private Log				log					= LogFactory.getLog(getClass());
 
-	// private boolean licenses = true;
+	// private XmlConfigurationBuilder xmlConfigurationBuilder = null;
+	// private XmlMapperBuilder xmlMapperBuilder = null;
 
-	public XMLSqlNodeBuilder(InputStream inputStream, XmlConfigurationBuilder xmlConfigurationBuilder, XmlMapperBuilder xmlMapperBuilder,
-			Map<String, SqlNode> integralRefMap, Map<String, Integer> integralServiceMap) {
-		this.parser = new XPathParser(inputStream);
-		this.xmlConfigurationBuilder = xmlConfigurationBuilder;
-		this.xmlMapperBuilder = xmlMapperBuilder;
-		this.integralRefMap = integralRefMap;
-		this.integralServiceMap = integralServiceMap;
+	private XmlNodeWrapper	root				= null;
+
+	private String			dsKeyWithSqlService	= null;
+	private Class<?>		serviceResultType	= null;
+
+	@Override
+	public void parseRef() {
+		buildRefNode(this.root.evalNodes("sql"));
 	}
 
-	private boolean isEmpty(String data) {
-		if (null == data || 0 == data.trim().length()) {
-			return true;
-		}
-		return false;
+	@Override
+	public void parseService() {
+		configurationElement(this.root);
 	}
 
-	private String getFullId(String id) {
-		if (null == ns || "".equals(ns)) {
-			return id;
-		}
-		return ns + "." + id;
+	// @Override
+	// public boolean support(XPathParser parser, XmlParseContext context) {
+	// XmlNodeWrapper _root = parser.evalNode("/sqlservices");
+	// if (null == _root) {
+	// return false;
+	// }
+	// this.context = context;
+	// this.root = _root;
+	// this.ns = this.root.getStringAttribute("ns", "");
+	// return true;
+	// }
+
+	@Override
+	public void setContext(XmlNodeWrapper root, XmlParseContext context) {
+		this.parseContext = context;
+		this.root = root;
+		this.ns = this.root.getStringAttribute("ns", "");
 	}
 
 	private void registerService(List<AbstractSqlNode> list, String nodeName) {
 		for (AbstractSqlNode node : list) {
-			TangYuanContainer.getInstance().addSqlService(node);
+			// TangYuanContainer.getInstance().addSqlService(node);
+			TangYuanContainer.getInstance().addService(node);
 			log.info("add <" + nodeName + "> node: " + node.getServiceKey());
 		}
 		// boolean result = TangYuanContainer.getInstance().hasLicenses();
@@ -95,33 +89,15 @@ public class XMLSqlNodeBuilder {
 		// }
 	}
 
-	private String getResultKey(String str) {
-		if (null != str && str.length() > 2 && str.startsWith("{") && str.endsWith("}")) {
-			return str.substring(1, str.length() - 1);
-		}
-		return null;
-	}
-
-	private boolean checkVar(String str) {
-		if (null != str && str.length() > 2 && str.startsWith("{") && str.endsWith("}")) {
-			return true;
-		}
-		return false;
-	}
-
-	private String getRealVal(String str) {
-		return str.substring(1, str.length() - 1);
-	}
-
 	private void existingService(String id) {
 		String fullId = getFullId(id);
-		if (null != integralServiceMap.get(fullId)) {
-			throw new XmlParseException("重复的节点:" + fullId);
+		if (null != this.parseContext.getIntegralServiceMap().get(fullId)) {
+			throw new XmlParseException("Duplicate nodes: " + fullId);
 		}
-		if (null != integralRefMap.get(fullId)) {
-			throw new XmlParseException("重复的节点:" + fullId);
+		if (null != this.parseContext.getIntegralRefMap().get(fullId)) {
+			throw new XmlParseException("Duplicate nodes: " + fullId);
 		}
-		integralServiceMap.put(fullId, 1);
+		this.parseContext.getIntegralServiceMap().put(fullId, 1);
 	}
 
 	/**
@@ -138,9 +114,9 @@ public class XMLSqlNodeBuilder {
 			}
 			CacheVo cacheVo = null;
 			if (map.containsKey("id".toUpperCase())) {
-				cacheVo = xmlConfigurationBuilder.getCacheVoMap().get(map.get("id".toUpperCase()));
+				cacheVo = this.parseContext.getCacheVoMap().get(map.get("id".toUpperCase()));
 			} else {
-				cacheVo = xmlConfigurationBuilder.getDefaultCacheVo();
+				cacheVo = this.parseContext.getDefaultCacheVo();
 			}
 			if (null == cacheVo) {
 				throw new XmlParseException("不存在的cache: " + cacheUse);
@@ -178,9 +154,9 @@ public class XMLSqlNodeBuilder {
 			}
 			CacheVo cacheVo = null;
 			if (map.containsKey("id".toUpperCase())) {
-				cacheVo = xmlConfigurationBuilder.getCacheVoMap().get(map.get("id".toUpperCase()));
+				cacheVo = this.parseContext.getCacheVoMap().get(map.get("id".toUpperCase()));
 			} else {
-				cacheVo = xmlConfigurationBuilder.getDefaultCacheVo();
+				cacheVo = this.parseContext.getDefaultCacheVo();
 			}
 			if (null == cacheVo) {
 				throw new XmlParseException("不存在的cache:" + cacheUse);
@@ -200,29 +176,18 @@ public class XMLSqlNodeBuilder {
 		return cacheCleanVo;
 	}
 
-	public void parseRef() {
-		this.root = parser.evalNode("/sqlservices");
-		this.ns = this.root.getStringAttribute("ns", "");
-		buildRefNode(this.root.evalNodes("sql"));
-	}
-
-	public void parseService() {
-		configurationElement(this.root);
-	}
-
 	private void buildRefNode(List<XmlNodeWrapper> contexts) {
 		for (XmlNodeWrapper context : contexts) {
-			String id = StringUtils.trim(context.getStringAttribute("id")); // xml
-																			// validation
+			String id = StringUtils.trim(context.getStringAttribute("id")); // xml V
 			String fullId = getFullId(id);
-			if (null == integralRefMap.get(fullId)) {
-				SqlNode sqlNode = parseNode(context, false);
+			if (null == this.parseContext.getIntegralRefMap().get(fullId)) {
+				TangYuanNode sqlNode = parseNode(context, false);
 				if (null != sqlNode) {
-					integralRefMap.put(fullId, sqlNode);
+					this.parseContext.getIntegralRefMap().put(fullId, sqlNode);
 					log.info("add <sql> node: " + fullId);
 				}
 			} else {
-				throw new XmlParseException("重复的<sql>节点:" + id);
+				throw new XmlParseException("Duplicate <sql> nodes: " + id);
 			}
 		}
 	}
@@ -254,10 +219,10 @@ public class XMLSqlNodeBuilder {
 		}
 	}
 
-	private SqlNode parseNode(XmlNodeWrapper context, boolean internal) {
-		List<SqlNode> contents = parseDynamicTags(context);
+	private TangYuanNode parseNode(XmlNodeWrapper context, boolean internal) {
+		List<TangYuanNode> contents = parseDynamicTags(context);
 		int size = contents.size();
-		SqlNode sqlNode = null;
+		TangYuanNode sqlNode = null;
 		if (size == 1) {
 			sqlNode = contents.get(0);
 		} else if (size > 1) {
@@ -268,8 +233,8 @@ public class XMLSqlNodeBuilder {
 		return sqlNode;
 	}
 
-	private List<SqlNode> parseDynamicTags(XmlNodeWrapper node) {
-		List<SqlNode> contents = new ArrayList<SqlNode>();
+	private List<TangYuanNode> parseDynamicTags(XmlNodeWrapper node) {
+		List<TangYuanNode> contents = new ArrayList<TangYuanNode>();
 		NodeList children = node.getNode().getChildNodes();
 		for (int i = 0; i < children.getLength(); i++) {
 			XmlNodeWrapper child = node.newXMlNode(children.item(i));
@@ -278,12 +243,16 @@ public class XMLSqlNodeBuilder {
 				if (isEmpty(data)) {
 					continue;
 				}
-				DynamicTextNode textSqlNode = new DynamicTextNode(data);
-				if (textSqlNode.isDynamic()) {
-					contents.add(textSqlNode);
-				} else {
-					contents.add(new StaticTextNode(data));
-				}
+				// DynamicTextNode textSqlNode = new DynamicTextNode(data);
+				// if (textSqlNode.isDynamic()) {
+				// contents.add(textSqlNode);
+				// } else {
+				// contents.add(new StaticTextNode(data));
+				// }
+
+				// 使用新的sqlText节点
+				contents.add(new SqlTextNode(data));
+
 				// log.info("-----------data:" + data);
 			} else if (child.getNode().getNodeType() == Node.ELEMENT_NODE) {
 				String nodeName = child.getNode().getNodeName();
@@ -328,7 +297,8 @@ public class XMLSqlNodeBuilder {
 			}
 
 			// resultMap处理
-			resultMap = xmlMapperBuilder.getMappingVoMap().get(_resultMap);
+			// resultMap = xmlMapperBuilder.getMappingVoMap().get(_resultMap);
+			resultMap = this.parseContext.getMappingVoMap().get(_resultMap);
 			if (null == resultMap) {
 				throw new XmlParseException("不存在的ResultMap:" + _resultMap);
 			}
@@ -339,7 +309,8 @@ public class XMLSqlNodeBuilder {
 			}
 
 		} else if (null == _resultType && null != _resultMap) {
-			resultMap = xmlMapperBuilder.getMappingVoMap().get(_resultMap);
+			// resultMap = xmlMapperBuilder.getMappingVoMap().get(_resultMap);
+			resultMap = this.parseContext.getMappingVoMap().get(_resultMap);
 			if (null == resultMap) {
 				throw new XmlParseException("不存在的ResultMap:" + _resultMap);
 			}
@@ -363,7 +334,7 @@ public class XMLSqlNodeBuilder {
 	private List<AbstractSqlNode> buildSelectSetNodes(List<XmlNodeWrapper> contexts) {
 		List<AbstractSqlNode> list = new ArrayList<AbstractSqlNode>();
 		for (XmlNodeWrapper context : contexts) {
-			SqlNode sqlNode = parseNode(context, false);
+			TangYuanNode sqlNode = parseNode(context, false);
 			if (null != sqlNode) {
 				String id = StringUtils.trim(context.getStringAttribute("id")); // xml
 																				// validation
@@ -392,7 +363,9 @@ public class XMLSqlNodeBuilder {
 				}
 
 				String txRef = StringUtils.trim(context.getStringAttribute("txRef"));
-				XTransactionDefinition txDef = this.xmlConfigurationBuilder.getTransactionMatcher().getTransactionDefinition(txRef, id, "selectSet");
+				// XTransactionDefinition txDef = this.xmlConfigurationBuilder.getTransactionMatcher().getTransactionDefinition(txRef, id,
+				// "selectSet");
+				XTransactionDefinition txDef = this.parseContext.getTransactionMatcher().getTransactionDefinition(txRef, id, "selectSet");
 				if (null == txDef) {
 					throw new XmlParseException("不存在的事务:" + id);
 				}
@@ -415,7 +388,7 @@ public class XMLSqlNodeBuilder {
 	private List<AbstractSqlNode> buildSelectOneNodes(List<XmlNodeWrapper> contexts) {
 		List<AbstractSqlNode> list = new ArrayList<AbstractSqlNode>();
 		for (XmlNodeWrapper context : contexts) {
-			SqlNode sqlNode = parseNode(context, false);
+			TangYuanNode sqlNode = parseNode(context, false);
 			if (null != sqlNode) {
 				String id = StringUtils.trim(context.getStringAttribute("id")); // xml
 																				// validation
@@ -438,7 +411,7 @@ public class XMLSqlNodeBuilder {
 				}
 
 				String txRef = StringUtils.trim(context.getStringAttribute("txRef"));
-				XTransactionDefinition txDef = this.xmlConfigurationBuilder.getTransactionMatcher().getTransactionDefinition(txRef, id, "selectOne");
+				XTransactionDefinition txDef = this.parseContext.getTransactionMatcher().getTransactionDefinition(txRef, id, "selectOne");
 				if (null == txDef) {
 					throw new XmlParseException("不存在的事务:" + id);
 				}
@@ -460,7 +433,7 @@ public class XMLSqlNodeBuilder {
 	private List<AbstractSqlNode> buildSelectVarNodes(List<XmlNodeWrapper> contexts) {
 		List<AbstractSqlNode> list = new ArrayList<AbstractSqlNode>();
 		for (XmlNodeWrapper context : contexts) {
-			SqlNode sqlNode = parseNode(context, false);
+			TangYuanNode sqlNode = parseNode(context, false);
 			if (null != sqlNode) {
 				String id = StringUtils.trim(context.getStringAttribute("id")); // xml
 																				// validation
@@ -479,7 +452,7 @@ public class XMLSqlNodeBuilder {
 				}
 
 				String txRef = StringUtils.trim(context.getStringAttribute("txRef"));
-				XTransactionDefinition txDef = this.xmlConfigurationBuilder.getTransactionMatcher().getTransactionDefinition(txRef, id, "selectVar");
+				XTransactionDefinition txDef = this.parseContext.getTransactionMatcher().getTransactionDefinition(txRef, id, "selectVar");
 				if (null == txDef) {
 					throw new XmlParseException("不存在的事务:" + id);
 				}
@@ -500,7 +473,7 @@ public class XMLSqlNodeBuilder {
 	private List<AbstractSqlNode> buildInsertNodes(List<XmlNodeWrapper> contexts) {
 		List<AbstractSqlNode> list = new ArrayList<AbstractSqlNode>();
 		for (XmlNodeWrapper context : contexts) {
-			SqlNode sqlNode = parseNode(context, false);
+			TangYuanNode sqlNode = parseNode(context, false);
 			if (null != sqlNode) {
 				String id = StringUtils.trim(context.getStringAttribute("id")); // xml
 																				// validation
@@ -525,7 +498,7 @@ public class XMLSqlNodeBuilder {
 				}
 
 				String txRef = StringUtils.trim(context.getStringAttribute("txRef"));
-				XTransactionDefinition txDef = this.xmlConfigurationBuilder.getTransactionMatcher().getTransactionDefinition(txRef, id, "insert");
+				XTransactionDefinition txDef = this.parseContext.getTransactionMatcher().getTransactionDefinition(txRef, id, "insert");
 				if (null == txDef) {
 					throw new XmlParseException("不存在的事务:" + id);
 				}
@@ -546,7 +519,7 @@ public class XMLSqlNodeBuilder {
 	private List<AbstractSqlNode> buildUpdateNodes(List<XmlNodeWrapper> contexts) {
 		List<AbstractSqlNode> list = new ArrayList<AbstractSqlNode>();
 		for (XmlNodeWrapper context : contexts) {
-			SqlNode sqlNode = parseNode(context, false);
+			TangYuanNode sqlNode = parseNode(context, false);
 			if (null != sqlNode) {
 				String id = StringUtils.trim(context.getStringAttribute("id")); // xml
 																				// validation
@@ -565,7 +538,7 @@ public class XMLSqlNodeBuilder {
 				}
 
 				String txRef = StringUtils.trim(context.getStringAttribute("txRef"));
-				XTransactionDefinition txDef = this.xmlConfigurationBuilder.getTransactionMatcher().getTransactionDefinition(txRef, id, "update");
+				XTransactionDefinition txDef = this.parseContext.getTransactionMatcher().getTransactionDefinition(txRef, id, "update");
 				if (null == txDef) {
 					throw new XmlParseException("不存在的事务:" + id);
 				}
@@ -586,7 +559,7 @@ public class XMLSqlNodeBuilder {
 	private List<AbstractSqlNode> buildDeleteNodes(List<XmlNodeWrapper> contexts) {
 		List<AbstractSqlNode> list = new ArrayList<AbstractSqlNode>();
 		for (XmlNodeWrapper context : contexts) {
-			SqlNode sqlNode = parseNode(context, false);
+			TangYuanNode sqlNode = parseNode(context, false);
 			if (null != sqlNode) {
 				String id = StringUtils.trim(context.getStringAttribute("id")); // xml
 																				// validation
@@ -605,7 +578,7 @@ public class XMLSqlNodeBuilder {
 				}
 
 				String txRef = StringUtils.trim(context.getStringAttribute("txRef"));
-				XTransactionDefinition txDef = this.xmlConfigurationBuilder.getTransactionMatcher().getTransactionDefinition(txRef, id, "delete");
+				XTransactionDefinition txDef = this.parseContext.getTransactionMatcher().getTransactionDefinition(txRef, id, "delete");
 				if (null == txDef) {
 					throw new XmlParseException("不存在的事务:" + id);
 				}
@@ -631,7 +604,7 @@ public class XMLSqlNodeBuilder {
 			existingService(id);
 
 			String txRef = StringUtils.trim(context.getStringAttribute("txRef"));
-			XTransactionDefinition txDef = this.xmlConfigurationBuilder.getTransactionMatcher().getTransactionDefinition(txRef, id, "sql-service");
+			XTransactionDefinition txDef = this.parseContext.getTransactionMatcher().getTransactionDefinition(txRef, id, "sql-service");
 			if (null == txDef) {
 				throw new XmlParseException("不存在的事务:" + id);
 			}
@@ -665,7 +638,7 @@ public class XMLSqlNodeBuilder {
 				cacheClean = parseCacheClean(_cacheClean, getFullId(id));
 			}
 
-			SqlNode sqlNode = parseNode(context, true);
+			TangYuanNode sqlNode = parseNode(context, true);
 			if (null != sqlNode) {
 				ServiceNode serviceNode = new ServiceNode(id, txRef, getFullId(id), dsKey, txDef, sqlNode, cacheUse, cacheClean,
 						this.serviceResultType);
@@ -678,25 +651,25 @@ public class XMLSqlNodeBuilder {
 	// ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	private interface NodeHandler {
-		void handleNode(XmlNodeWrapper nodeToHandle, List<SqlNode> targetContents);
+		void handleNode(XmlNodeWrapper nodeToHandle, List<TangYuanNode> targetContents);
 	}
 
 	private class IfHandler implements NodeHandler {
-		public void handleNode(XmlNodeWrapper nodeToHandle, List<SqlNode> targetContents) {
+		public void handleNode(XmlNodeWrapper nodeToHandle, List<TangYuanNode> targetContents) {
 
 			String test = nodeToHandle.getStringAttribute("test");
 			if (null == test) {
 				throw new XmlParseException("If Handler test = null");
 			}
 
-			List<SqlNode> contents = parseDynamicTags(nodeToHandle);
+			List<TangYuanNode> contents = parseDynamicTags(nodeToHandle);
 			int size = contents.size();
 
 			IfNode ifNode = null;
 			if (1 == size) {
-				ifNode = new IfNode(contents.get(0), new TestExprParser().parse(test));
+				ifNode = new IfNode(contents.get(0), new LogicalExprParser().parse(test));
 			} else if (size > 1) {
-				ifNode = new IfNode(new MixedNode(contents), new TestExprParser().parse(test));
+				ifNode = new IfNode(new MixedNode(contents), new LogicalExprParser().parse(test));
 			} else { // size == 0
 				throw new XmlParseException("If Handler contents = null");
 			}
@@ -705,11 +678,11 @@ public class XMLSqlNodeBuilder {
 	}
 
 	private class ElseIfHandler implements NodeHandler {
-		public void handleNode(XmlNodeWrapper nodeToHandle, List<SqlNode> targetContents) {
+		public void handleNode(XmlNodeWrapper nodeToHandle, List<TangYuanNode> targetContents) {
 			if (0 == targetContents.size()) {
 				throw new XmlParseException("ElseIf节点不合法0");
 			}
-			SqlNode previousNode = targetContents.get(targetContents.size() - 1);
+			TangYuanNode previousNode = targetContents.get(targetContents.size() - 1);
 			if (!(previousNode instanceof IfNode)) {
 				throw new XmlParseException("ElseIf节点之前的节点必须是IF节点");
 			}
@@ -718,14 +691,14 @@ public class XMLSqlNodeBuilder {
 				throw new XmlParseException("If Handler test = null");
 			}
 
-			List<SqlNode> contents = parseDynamicTags(nodeToHandle);
+			List<TangYuanNode> contents = parseDynamicTags(nodeToHandle);
 			int size = contents.size();
 
 			IfNode ifNode = null;
 			if (1 == size) {
-				ifNode = new IfNode(contents.get(0), new TestExprParser().parse(test));
+				ifNode = new IfNode(contents.get(0), new LogicalExprParser().parse(test));
 			} else if (size > 1) {
-				ifNode = new IfNode(new MixedNode(contents), new TestExprParser().parse(test));
+				ifNode = new IfNode(new MixedNode(contents), new LogicalExprParser().parse(test));
 			} else {
 				throw new XmlParseException("If Handler contents = null");
 			}
@@ -734,15 +707,15 @@ public class XMLSqlNodeBuilder {
 	}
 
 	private class ElseHandler implements NodeHandler {
-		public void handleNode(XmlNodeWrapper nodeToHandle, List<SqlNode> targetContents) {
+		public void handleNode(XmlNodeWrapper nodeToHandle, List<TangYuanNode> targetContents) {
 			if (0 == targetContents.size()) {
 				throw new XmlParseException("ElseIf节点不合法0");
 			}
-			SqlNode previousNode = targetContents.get(targetContents.size() - 1);
+			TangYuanNode previousNode = targetContents.get(targetContents.size() - 1);
 			if (!(previousNode instanceof IfNode)) {
 				throw new XmlParseException("ElseIf节点不合法1");
 			}
-			List<SqlNode> contents = parseDynamicTags(nodeToHandle);
+			List<TangYuanNode> contents = parseDynamicTags(nodeToHandle);
 			int size = contents.size();
 			IfNode ifNode = null;
 			if (1 == size) {
@@ -757,10 +730,9 @@ public class XMLSqlNodeBuilder {
 	}
 
 	private class IncludeHandler implements NodeHandler {
-		public void handleNode(XmlNodeWrapper nodeToHandle, List<SqlNode> targetContents) {
-			String refKey = nodeToHandle.getStringAttribute("ref"); // xml
-																	// validation
-			SqlNode refNode = integralRefMap.get(refKey);
+		public void handleNode(XmlNodeWrapper nodeToHandle, List<TangYuanNode> targetContents) {
+			String refKey = nodeToHandle.getStringAttribute("ref"); // xml V
+			TangYuanNode refNode = parseContext.getIntegralRefMap().get(refKey);
 			if (null == refNode) {
 				throw new XmlParseException("refNode is null:" + refKey);
 			}
@@ -769,7 +741,7 @@ public class XMLSqlNodeBuilder {
 	}
 
 	private class ForEachHandler implements NodeHandler {
-		public void handleNode(XmlNodeWrapper nodeToHandle, List<SqlNode> targetContents) {
+		public void handleNode(XmlNodeWrapper nodeToHandle, List<TangYuanNode> targetContents) {
 
 			String collection = StringUtils.trim(nodeToHandle.getStringAttribute("collection"));
 			if (!checkVar(collection)) {
@@ -789,9 +761,9 @@ public class XMLSqlNodeBuilder {
 			String close = StringUtils.trim(nodeToHandle.getStringAttribute("close"));
 			String separator = StringUtils.trim(nodeToHandle.getStringAttribute("separator"));
 
-			List<SqlNode> contents = parseDynamicTags(nodeToHandle);
+			List<TangYuanNode> contents = parseDynamicTags(nodeToHandle);
 			int size = contents.size();
-			SqlNode sqlNode = null;
+			TangYuanNode sqlNode = null;
 			if (1 == size) {
 				sqlNode = contents.get(0);
 			} else if (size > 1) {
@@ -808,16 +780,18 @@ public class XMLSqlNodeBuilder {
 				if (null == index) {
 					index = "i";
 				}
-				sqlNode = new StaticTextNode("#{" + collection + "[" + index + "]}");
+				// sqlNode = new StaticTextNode("#{" + collection + "[" + index + "]}");
+				sqlNode = new SqlTextNode("#{" + collection + "[" + index + "]}");
 			}
 
-			ForEachNode forEachNode = new ForEachNode(sqlNode, VariableParser.parse(collection, false), index, open, close, separator);
+			// ForEachNode forEachNode = new SqlForEachNode(sqlNode, VariableParser.parse(collection, false), index, open, close, separator);
+			ForEachNode forEachNode = new SqlForEachNode(sqlNode, new NormalParser().parse(collection), index, open, close, separator);
 			targetContents.add(forEachNode);
 		}
 	}
 
 	private class SetVarHandler implements NodeHandler {
-		public void handleNode(XmlNodeWrapper nodeToHandle, List<SqlNode> targetContents) {
+		public void handleNode(XmlNodeWrapper nodeToHandle, List<TangYuanNode> targetContents) {
 			// <setvar key="{x}" value="100" type="Integer" />
 			String key = StringUtils.trim(nodeToHandle.getStringAttribute("key")); // xml
 																					// validation
@@ -837,54 +811,8 @@ public class XMLSqlNodeBuilder {
 		}
 	}
 
-	private Object getSetVarValue(String str, String type) {
-		if (null == str) {
-			return null;
-		}
-		if (null == type) {
-			if ("true".equalsIgnoreCase(str) || "false".equalsIgnoreCase(str)) {
-				return Boolean.parseBoolean(str);
-			} else if (NumberUtils.isNumber(str)) {
-				return NumberUtils.parseNumber(str);
-			} else if (DateUtils.isDateTime(str)) {
-				return DateUtils.parseDate(str);
-			} else if (DateUtils.isOnlyDate(str)) {
-				return DateUtils.parseSqlDate(str);
-			} else if (DateUtils.isOnlyTime(str)) {
-				return DateUtils.parseSqlTime(str);
-			}
-			// TODO: 时间类型的格式化末班需要在定义一些
-			return str;
-		} else {
-			if ("int".equalsIgnoreCase(type) || "Integer".equalsIgnoreCase(type)) {
-				return Integer.parseInt(str);
-			} else if ("long".equalsIgnoreCase(type)) {
-				return Long.parseLong(str);
-			} else if ("float".equalsIgnoreCase(type)) {
-				return Float.parseFloat(str);
-			} else if ("double".equalsIgnoreCase(type)) {
-				return Double.parseDouble(str);
-			} else if ("short".equalsIgnoreCase(type)) {
-				return Short.parseShort(str);
-			} else if ("boolean".equalsIgnoreCase(type)) {
-				return Boolean.parseBoolean(str);
-			} else if ("byte".equalsIgnoreCase(type)) {
-				return Byte.parseByte(str);
-			} else if ("char".equalsIgnoreCase(type)) {
-				return str.charAt(0);
-			} else if ("dateTime".equalsIgnoreCase(type)) {
-				return DateUtils.parseDate(str);
-			} else if ("date".equalsIgnoreCase(type)) {
-				return DateUtils.parseSqlDate(str);
-			} else if ("time".equalsIgnoreCase(type)) {
-				return DateUtils.parseSqlTime(str);
-			}
-			return str;
-		}
-	}
-
 	private class LogHandler implements NodeHandler {
-		public void handleNode(XmlNodeWrapper nodeToHandle, List<SqlNode> targetContents) {
+		public void handleNode(XmlNodeWrapper nodeToHandle, List<TangYuanNode> targetContents) {
 			String message = StringUtils.trim(nodeToHandle.getStringAttribute("message")); // xml
 																							// validation
 			String _level = StringUtils.trim(nodeToHandle.getStringAttribute("level")); // xml
@@ -899,15 +827,16 @@ public class XMLSqlNodeBuilder {
 	}
 
 	private class ReturnHandler implements NodeHandler {
-		public void handleNode(XmlNodeWrapper nodeToHandle, List<SqlNode> targetContents) {
-			VariableVo result = null;
+		public void handleNode(XmlNodeWrapper nodeToHandle, List<TangYuanNode> targetContents) {
+			Variable result = null;
 			String _result = StringUtils.trim(nodeToHandle.getStringAttribute("value"));
 			if (null != _result) {
 				if (!checkVar(_result)) {
 					throw new XmlParseException("Return value 不合法, 应是{xxx}");
 				}
 				_result = getRealVal(_result);
-				result = VariableParser.parse(_result, false);
+				// result = VariableParser.parse(_result, false);
+				result = new NormalParser().parse(_result);
 			}
 
 			List<ReturnItem> resultList = null;
@@ -929,7 +858,8 @@ public class XMLSqlNodeBuilder {
 					} else {
 						name = value;
 					}
-					resultList.add(new ReturnItem(name, VariableParser.parse(value, false)));
+					// resultList.add(new ReturnItem(name, VariableParser.parse(value, false)));
+					resultList.add(new ReturnItem(name, new NormalParser().parse(value)));
 				}
 			}
 
@@ -943,7 +873,7 @@ public class XMLSqlNodeBuilder {
 	}
 
 	private class ThrowHandler implements NodeHandler {
-		public void handleNode(XmlNodeWrapper nodeToHandle, List<SqlNode> targetContents) {
+		public void handleNode(XmlNodeWrapper nodeToHandle, List<TangYuanNode> targetContents) {
 			String test = StringUtils.trim(nodeToHandle.getStringAttribute("test")); // xml
 																						// validation
 			String code = StringUtils.trim(nodeToHandle.getStringAttribute("code")); // xml
@@ -954,12 +884,12 @@ public class XMLSqlNodeBuilder {
 				throw new XmlParseException("Exception节点中test,code不能为空");
 			}
 			// log.info("ThrowHandler test:" + test);
-			targetContents.add(new ExceptionNode(new TestExprParser().parse(test), Integer.parseInt(code), message, i18n));
+			targetContents.add(new ExceptionNode(new LogicalExprParser().parse(test), Integer.parseInt(code), message, i18n));
 		}
 	}
 
 	private class CallHandler implements NodeHandler {
-		public void handleNode(XmlNodeWrapper nodeToHandle, List<SqlNode> targetContents) {
+		public void handleNode(XmlNodeWrapper nodeToHandle, List<TangYuanNode> targetContents) {
 			String service = StringUtils.trim(nodeToHandle.getStringAttribute("service"));
 			if (null == service) {
 				throw new XmlParseException("call节点中service属性不能为空");
@@ -992,7 +922,8 @@ public class XMLSqlNodeBuilder {
 					} else {
 						name = value;
 					}
-					itemList.add(new CallNodeParameterItem(name, VariableParser.parse(value, false)));
+					// itemList.add(new CallNodeParameterItem(name, VariableParser.parse(value, false)));
+					itemList.add(new CallNodeParameterItem(name, new NormalParser().parse(value)));
 				}
 			}
 
@@ -1002,8 +933,8 @@ public class XMLSqlNodeBuilder {
 	}
 
 	private class SelectSetHandler implements NodeHandler {
-		public void handleNode(XmlNodeWrapper nodeToHandle, List<SqlNode> targetContents) {
-			SqlNode sqlNode = parseNode(nodeToHandle, true);
+		public void handleNode(XmlNodeWrapper nodeToHandle, List<TangYuanNode> targetContents) {
+			TangYuanNode sqlNode = parseNode(nodeToHandle, true);
 			if (null != sqlNode) {
 				String dsKey = StringUtils.trim(nodeToHandle.getStringAttribute("dsKey"));
 				if (null == dsKey) {
@@ -1033,8 +964,8 @@ public class XMLSqlNodeBuilder {
 	}
 
 	private class SelectOneHandler implements NodeHandler {
-		public void handleNode(XmlNodeWrapper nodeToHandle, List<SqlNode> targetContents) {
-			SqlNode sqlNode = parseNode(nodeToHandle, true);
+		public void handleNode(XmlNodeWrapper nodeToHandle, List<TangYuanNode> targetContents) {
+			TangYuanNode sqlNode = parseNode(nodeToHandle, true);
 			if (null != sqlNode) {
 				String dsKey = StringUtils.trim(nodeToHandle.getStringAttribute("dsKey"));
 				if (null == dsKey) {
@@ -1059,8 +990,8 @@ public class XMLSqlNodeBuilder {
 	}
 
 	private class SelectVarHandler implements NodeHandler {
-		public void handleNode(XmlNodeWrapper nodeToHandle, List<SqlNode> targetContents) {
-			SqlNode sqlNode = parseNode(nodeToHandle, true);
+		public void handleNode(XmlNodeWrapper nodeToHandle, List<TangYuanNode> targetContents) {
+			TangYuanNode sqlNode = parseNode(nodeToHandle, true);
 			if (null != sqlNode) {
 				String dsKey = StringUtils.trim(nodeToHandle.getStringAttribute("dsKey"));
 				if (null == dsKey) {
@@ -1085,8 +1016,8 @@ public class XMLSqlNodeBuilder {
 	}
 
 	private class ProcedureHandler implements NodeHandler {
-		public void handleNode(XmlNodeWrapper nodeToHandle, List<SqlNode> targetContents) {
-			SqlNode sqlNode = parseNode(nodeToHandle, true);
+		public void handleNode(XmlNodeWrapper nodeToHandle, List<TangYuanNode> targetContents) {
+			TangYuanNode sqlNode = parseNode(nodeToHandle, true);
 			if (null != sqlNode) {
 				String dsKey = StringUtils.trim(nodeToHandle.getStringAttribute("dsKey"));
 				if (null == dsKey) {
@@ -1111,8 +1042,8 @@ public class XMLSqlNodeBuilder {
 	}
 
 	private class DeleteHandler implements NodeHandler {
-		public void handleNode(XmlNodeWrapper nodeToHandle, List<SqlNode> targetContents) {
-			SqlNode sqlNode = parseNode(nodeToHandle, true);
+		public void handleNode(XmlNodeWrapper nodeToHandle, List<TangYuanNode> targetContents) {
+			TangYuanNode sqlNode = parseNode(nodeToHandle, true);
 			if (null != sqlNode) {
 				String dsKey = StringUtils.trim(nodeToHandle.getStringAttribute("dsKey"));
 				if (null == dsKey) {
@@ -1143,8 +1074,8 @@ public class XMLSqlNodeBuilder {
 	}
 
 	private class UpdateHandler implements NodeHandler {
-		public void handleNode(XmlNodeWrapper nodeToHandle, List<SqlNode> targetContents) {
-			SqlNode sqlNode = parseNode(nodeToHandle, true);
+		public void handleNode(XmlNodeWrapper nodeToHandle, List<TangYuanNode> targetContents) {
+			TangYuanNode sqlNode = parseNode(nodeToHandle, true);
 			if (null != sqlNode) {
 				String dsKey = StringUtils.trim(nodeToHandle.getStringAttribute("dsKey"));
 				if (null == dsKey) {
@@ -1175,8 +1106,8 @@ public class XMLSqlNodeBuilder {
 	}
 
 	private class InsertHandler implements NodeHandler {
-		public void handleNode(XmlNodeWrapper nodeToHandle, List<SqlNode> targetContents) {
-			SqlNode sqlNode = parseNode(nodeToHandle, true);
+		public void handleNode(XmlNodeWrapper nodeToHandle, List<TangYuanNode> targetContents) {
+			TangYuanNode sqlNode = parseNode(nodeToHandle, true);
 			if (null != sqlNode) {
 				String dsKey = StringUtils.trim(nodeToHandle.getStringAttribute("dsKey"));
 				if (null == dsKey) {
@@ -1215,9 +1146,9 @@ public class XMLSqlNodeBuilder {
 	}
 
 	private class TransGroupHandler implements NodeHandler {
-		public void handleNode(XmlNodeWrapper nodeToHandle, List<SqlNode> targetContents) {
+		public void handleNode(XmlNodeWrapper nodeToHandle, List<TangYuanNode> targetContents) {
 			String txRef = StringUtils.trim(nodeToHandle.getStringAttribute("txRef"));
-			XTransactionDefinition txDef = xmlConfigurationBuilder.getTransactionMatcher().getTransactionDefinition(txRef, null, null);
+			XTransactionDefinition txDef = parseContext.getTransactionMatcher().getTransactionDefinition(txRef, null, null);
 			if (null == txDef) {
 				throw new XmlParseException("不存在的事务:" + txRef);
 			}
@@ -1226,7 +1157,7 @@ public class XMLSqlNodeBuilder {
 				throw new XmlParseException("TransGroup中的事务定义必须为[REQUIRES_NEW|NOT_SUPPORTED]");
 			}
 
-			SqlNode sqlNode = parseNode(nodeToHandle, true);
+			TangYuanNode sqlNode = parseNode(nodeToHandle, true);
 			if (null != sqlNode) {
 				TransGroupNode transGroupNode = new TransGroupNode(txDef, sqlNode);
 				targetContents.add(transGroupNode);
@@ -1234,55 +1165,62 @@ public class XMLSqlNodeBuilder {
 		}
 	}
 
-	private int getLogLevel(String str) {
-		if ("ERROR".equalsIgnoreCase(str)) {
-			return 5;
-		} else if ("WARN".equalsIgnoreCase(str)) {
-			return 4;
-		} else if ("INFO".equalsIgnoreCase(str)) {
-			return 3;
-		} else if ("DEBUG".equalsIgnoreCase(str)) {
-			return 2;
-		} else {
-			return 1;
+	private Map<String, NodeHandler> nodeHandlers = new HashMap<String, NodeHandler>() {
+		private static final long serialVersionUID = 1L;
+
+		{
+			put("foreach", new ForEachHandler());
+			put("if", new IfHandler());
+			put("else", new ElseHandler());
+			put("elseif", new ElseIfHandler());
+			put("include", new IncludeHandler());
+			put("exception", new ThrowHandler());
+			put("return", new ReturnHandler());
+			put("setvar", new SetVarHandler());
+			put("log", new LogHandler());
+			put("selectSet", new SelectSetHandler());
+			put("selectOne", new SelectOneHandler());
+			put("selectVar", new SelectVarHandler());
+			put("update", new UpdateHandler());
+			put("delete", new DeleteHandler());
+			put("insert", new InsertHandler());
+			put("procedure", new ProcedureHandler());
+			put("transGroup", new TransGroupHandler());
+			put("call", new CallHandler());
 		}
-	}
+	};
 
-	private CallMode getCallMode(String str) {
-		if ("EXTEND".equalsIgnoreCase(str)) {
-			return CallMode.EXTEND;
-		} else if ("ALONE".equalsIgnoreCase(str)) {
-			return CallMode.ALONE;
-		} else if ("ASYNC".equalsIgnoreCase(str)) {
-			return CallMode.ASYNC;
-		} else {
-			return CallMode.EXTEND;
-		}
-	}
+	// private boolean isEmpty(String data) {
+	// if (null == data || 0 == data.trim().length()) {
+	// return true;
+	// }
+	// return false;
+	// }
+	//
+	// private String getFullId(String id) {
+	// if (null == ns || "".equals(ns)) {
+	// return id;
+	// }
+	// return ns + "." + id;
+	// }
 
-	private Map<String, NodeHandler>	nodeHandlers	= new HashMap<String, NodeHandler>() {
-															private static final long	serialVersionUID	= 1L;
+	/**
+	 * <SQL>节点MAP
+	 */
+	// private Map<String, TangYuanNode> integralRefMap = null;
+	/**
+	 * 服务节点
+	 */
+	// private Map<String, Integer> integralServiceMap = null;
+	// private boolean licenses = true;
 
-															{
-																put("foreach", new ForEachHandler());
-																put("if", new IfHandler());
-																put("else", new ElseHandler());
-																put("elseif", new ElseIfHandler());
-																put("include", new IncludeHandler());
-																put("exception", new ThrowHandler());
-																put("return", new ReturnHandler());
-																put("setvar", new SetVarHandler());
-																put("log", new LogHandler());
-																put("selectSet", new SelectSetHandler());
-																put("selectOne", new SelectOneHandler());
-																put("selectVar", new SelectVarHandler());
-																put("update", new UpdateHandler());
-																put("delete", new DeleteHandler());
-																put("insert", new InsertHandler());
-																put("procedure", new ProcedureHandler());
-																put("transGroup", new TransGroupHandler());
-																put("call", new CallHandler());
-															}
-														};
-
+	// public XMLSqlNodeBuilder(InputStream inputStream, XmlConfigurationBuilder xmlConfigurationBuilder, XmlMapperBuilder xmlMapperBuilder,
+	// Map<String, TangYuanNode> integralRefMap, Map<String, Integer> integralServiceMap) {
+	// this.parser = new XPathParser(inputStream);
+	// this.xmlConfigurationBuilder = xmlConfigurationBuilder;
+	// this.xmlMapperBuilder = xmlMapperBuilder;
+	// this.integralRefMap = integralRefMap;
+	// this.integralServiceMap = integralServiceMap;
+	// private XPathParser parser = null;
+	// private String ns = "";
 }

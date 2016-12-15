@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
+<!-- 编辑使用 XMLSpy v2006 U (http://www.altova.com) 由 any (any) -->
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://xson.org/tangyuan/sqlservices" targetNamespace="http://xson.org/tangyuan/sqlservices" elementFormDefault="qualified" attributeFormDefault="unqualified">
 	<xs:element name="sql">
 		<xs:complexType>
@@ -150,6 +151,7 @@
 					<xs:element ref="exception"/>
 					<xs:element ref="transGroup"/>
 					<xs:element ref="include"/>
+					<xs:element ref="call"/>
 				</xs:choice>
 				<xs:element ref="return" minOccurs="0"/>
 			</xs:sequence>
@@ -218,6 +220,7 @@
 					<xs:element ref="exception"/>
 					<xs:element ref="transGroup"/>
 					<xs:element ref="include"/>
+					<xs:element ref="call"/>
 				</xs:choice>
 			</xs:sequence>
 			<xs:attribute name="test" type="xs:string" use="required"/>
@@ -242,6 +245,7 @@
 					<xs:element ref="exception"/>
 					<xs:element ref="transGroup"/>
 					<xs:element ref="include"/>
+					<xs:element ref="call"/>
 				</xs:choice>
 			</xs:sequence>
 			<xs:attribute name="test" type="xs:string" use="required"/>
@@ -266,6 +270,7 @@
 					<xs:element ref="exception"/>
 					<xs:element ref="transGroup"/>
 					<xs:element ref="include"/>
+					<xs:element ref="call"/>
 				</xs:choice>
 			</xs:sequence>
 		</xs:complexType>
@@ -289,6 +294,7 @@
 					<xs:element ref="exception"/>
 					<xs:element ref="transGroup"/>
 					<xs:element ref="include"/>
+					<xs:element ref="call"/>
 				</xs:choice>
 			</xs:sequence>
 			<xs:attribute name="collection" type="xs:string" use="required"/>

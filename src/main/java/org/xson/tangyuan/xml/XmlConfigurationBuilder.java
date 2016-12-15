@@ -23,32 +23,37 @@ import org.xson.tangyuan.datasource.MuiltDataSourceManager;
 import org.xson.tangyuan.datasource.SimpleDataSourceManager;
 import org.xson.tangyuan.logging.Log;
 import org.xson.tangyuan.logging.LogFactory;
-import org.xson.tangyuan.transaction.DefaultTransactionMatcher;
 import org.xson.tangyuan.transaction.XTransactionDefinition;
 import org.xson.tangyuan.type.TypeHandler;
 import org.xson.tangyuan.type.TypeHandlerRegistry;
 import org.xson.tangyuan.util.ClassUtils;
 import org.xson.tangyuan.util.Resources;
 import org.xson.tangyuan.util.StringUtils;
-import org.xson.tangyuan.xml.node.SqlNode;
+import org.xson.tangyuan.xml.node.TangYuanNode;
+import org.xson.tangyuan.xml.node.XMLJavaNodeBuilder;
 import org.xson.tangyuan.xml.node.XMLSqlNodeBuilder;
 
 public class XmlConfigurationBuilder {
 
 	private Log							log						= LogFactory.getLog(getClass());
 	private XPathParser					xPathParser				= null;
-	private DefaultTransactionMatcher	transactionMatcher		= new DefaultTransactionMatcher();
+
 	private Map<String, DataSourceVo>	dataSourceVoMap			= new HashMap<String, DataSourceVo>();
 	private boolean						hasDefaultDataSource	= false;
-	private XmlMapperBuilder			xmlMapperBuilder		= null;
-	private XmlShardingBuilder			xmlShardingBuilder		= null;
-	private List<XMLSqlNodeBuilder>		xmlsqlNodeBuilderList	= null;
+
+	// private XmlMapperBuilder xmlMapperBuilder = null;
+	// private XmlShardingBuilder xmlShardingBuilder = null;
+	// private List<XMLSqlNodeBuilder> xmlsqlNodeBuilderList = null;
+	// private DefaultTransactionMatcher transactionMatcher = new DefaultTransactionMatcher();
 
 	private CacheVo						defaultCacheVo			= null;
 	private Map<String, ICache>			cacheHandlerMap			= new HashMap<String, ICache>();
 	private Map<String, CacheVo>		cacheVoMap				= new HashMap<String, CacheVo>();
 
 	// private boolean licenses = true;
+
+	/** 解析内容上下文 */
+	private XmlParseContext				context					= new XmlParseContext();
 
 	public XmlConfigurationBuilder(String resource) throws Throwable {
 		InputStream inputStream = Resources.getResourceAsStream(resource);
@@ -69,16 +74,27 @@ public class XmlConfigurationBuilder {
 			buildTransactionNodes(context.evalNodes("transaction"));// 解析transaction
 			buildSetDefaultTransaction(context.evalNodes("setDefaultTransaction"));// 解析默认的transaction
 
-			// buildCacheClass(context.evalNodes("cacheClass")); // 解析缓存处理器
+			buildCacheClass(context.evalNodes("cacheClass")); // 解析缓存处理器
 			buildCache(context.evalNodes("cache")); // 解析缓存定义
 			buildCacheGroup(context.evalNodes("cacheGroup")); // 解析缓存组定义
 			setDefaultCache();
-			startCache();// TODO: 需要启动Cache
+			startCache();// 需要启动Cache
+
+			this.context.setDefaultCacheVo(defaultCacheVo);
+			this.context.setCacheVoMap(cacheVoMap);
 
 			buildMapperNodes(context.evalNodes("mapper"));
 			buildShardingNodes(context.evalNodes("sharding"));
 			buildPluginNodes(context.evalNodes("plugin"));
-		} catch (Exception e) {
+
+			// 扩展插件
+			buildMongoExtendNodes(context.evalNodes("mongo-extend"));
+			buildTimerServerExtendNodes(context.evalNodes("timer-server-extend"));
+			buildTimerClientExtendNodes(context.evalNodes("timer-client-extend"));
+
+			// clean
+			this.context.clean();
+		} catch (Throwable e) {
 			throw new XmlParseException(e);
 		}
 	}
@@ -253,7 +269,8 @@ public class XmlConfigurationBuilder {
 			ruleList.add(new String[] { StringUtils.trim(propertyNode.getStringAttribute("name")),
 					StringUtils.trim(propertyNode.getStringAttribute("value")) });
 		}
-		transactionMatcher.setTypeAndRule(type, ruleList);
+		// transactionMatcher.setTypeAndRule(type, ruleList);
+		context.getTransactionMatcher().setTypeAndRule(type, ruleList);
 		log.info("add default transaction rule, type is " + type);
 	}
 
@@ -442,7 +459,8 @@ public class XmlConfigurationBuilder {
 			log.info("add transaction definition: " + id);
 		}
 
-		transactionMatcher.setTransactionMap(transactionMap);
+		// transactionMatcher.setTransactionMap(transactionMap);
+		this.context.getTransactionMatcher().setTransactionMap(transactionMap);
 	}
 
 	/**
@@ -465,8 +483,10 @@ public class XmlConfigurationBuilder {
 																					// v
 		log.info("Start parsing: " + resource);
 		InputStream inputStream = Resources.getResourceAsStream(resource);
-		xmlMapperBuilder = new XmlMapperBuilder(inputStream);
+		XmlMapperBuilder xmlMapperBuilder = new XmlMapperBuilder(inputStream);
 		xmlMapperBuilder.parse();
+		// add context
+		this.context.setMappingVoMap(xmlMapperBuilder.getMappingVoMap());
 	}
 
 	/**
@@ -485,7 +505,7 @@ public class XmlConfigurationBuilder {
 																					// v
 		log.info("Start parsing: " + resource);
 		InputStream inputStream = Resources.getResourceAsStream(resource);
-		xmlShardingBuilder = new XmlShardingBuilder(inputStream, dataSourceVoMap);
+		XmlShardingBuilder xmlShardingBuilder = new XmlShardingBuilder(inputStream, dataSourceVoMap);
 		xmlShardingBuilder.parse();
 	}
 
@@ -495,11 +515,14 @@ public class XmlConfigurationBuilder {
 			return;
 		}
 		List<String> resourceList = new ArrayList<String>();
-		xmlsqlNodeBuilderList = new ArrayList<XMLSqlNodeBuilder>();
+		List<XmlNodeBuilder> xmlNodeBuilderList = new ArrayList<XmlNodeBuilder>();
 
 		// 防止重复, 全局控制
-		Map<String, SqlNode> integralRefMap = new HashMap<String, SqlNode>();
+		Map<String, TangYuanNode> integralRefMap = new HashMap<String, TangYuanNode>();
 		Map<String, Integer> integralServiceMap = new HashMap<String, Integer>();
+
+		context.setIntegralRefMap(integralRefMap);
+		context.setIntegralServiceMap(integralServiceMap);
 
 		// 扫描所有的<SQL>
 		for (int i = 0; i < size; i++) {
@@ -508,17 +531,89 @@ public class XmlConfigurationBuilder {
 																						// v
 			log.info("Start parsing: " + resource);
 			InputStream inputStream = Resources.getResourceAsStream(resource);
-			XMLSqlNodeBuilder xmlSqlNodeBuilder = new XMLSqlNodeBuilder(inputStream, this, xmlMapperBuilder, integralRefMap, integralServiceMap);
-			xmlSqlNodeBuilder.parseRef();
-			xmlsqlNodeBuilderList.add(xmlSqlNodeBuilder);
+			// XMLSqlNodeBuilder xmlSqlNodeBuilder = new XMLSqlNodeBuilder(inputStream, this, xmlMapperBuilder, integralRefMap, integralServiceMap);
+
+			XPathParser parser = new XPathParser(inputStream);
+			XmlNodeBuilder nodeBuilder = getXmlNodeBuilder(parser);
+
+			nodeBuilder.parseRef();
+			xmlNodeBuilderList.add(nodeBuilder);
 			resourceList.add(resource);
 		}
 
 		// 注册所有的服务
 		for (int i = 0; i < size; i++) {
 			log.info("Start parsing: " + resourceList.get(i));
-			xmlsqlNodeBuilderList.get(i).parseService();
+			xmlNodeBuilderList.get(i).parseService();
 		}
+	}
+
+	private XmlNodeBuilder getXmlNodeBuilder(XPathParser parser) {
+		XmlNodeWrapper _root = null;
+		if (null != (_root = parser.evalNode("/sqlservices"))) {
+			XmlNodeBuilder nodeBuilder = new XMLSqlNodeBuilder();
+			nodeBuilder.setContext(_root, context);
+			return nodeBuilder;
+		} else if (null != (_root = parser.evalNode("/javaservices"))) {
+			XmlNodeBuilder nodeBuilder = new XMLJavaNodeBuilder();
+			nodeBuilder.setContext(_root, context);
+			return nodeBuilder;
+		} else {
+			throw new XmlParseException("Unsupported root node in the service plug-in");
+		}
+	}
+
+	// 扫描Mongo扩展插件
+	private void buildMongoExtendNodes(List<XmlNodeWrapper> contexts) throws Throwable {
+		if (contexts.size() == 0) {
+			return;
+		}
+		if (contexts.size() > 1) {
+			throw new XmlParseException("Only one mongo plugin is allowed");
+		}
+
+		XmlNodeWrapper xNode = contexts.get(0);
+		String resource = StringUtils.trim(xNode.getStringAttribute("resource"));
+
+		// TODO: 调用静态代码库
+		Class.forName("org.xson.tangyuan.TangYuanMongoContainer");
+
+		XmlExtendBuilder extendBuilder = TangYuanContainer.getInstance().getBuilderMap().get("mongo");
+		if (null == extendBuilder) {
+			throw new XmlParseException("Missing mongo extension plugin builder");
+		}
+
+		extendBuilder.parse(this, resource);
+	}
+
+	private void buildTimerClientExtendNodes(List<XmlNodeWrapper> contexts) throws Throwable {
+		if (contexts.size() == 0) {
+			return;
+		}
+		if (contexts.size() > 1) {
+			throw new XmlParseException("Only one timer client plugin is allowed");
+		}
+
+		XmlNodeWrapper xNode = contexts.get(0);
+		String resource = StringUtils.trim(xNode.getStringAttribute("resource"));
+
+		org.xson.timer.client.TimerContainer.getInstance().start(resource);
+		log.info("timer client start successful...");
+	}
+
+	private void buildTimerServerExtendNodes(List<XmlNodeWrapper> contexts) throws Throwable {
+		if (contexts.size() == 0) {
+			return;
+		}
+		if (contexts.size() > 1) {
+			throw new XmlParseException("Only one timer server plugin is allowed");
+		}
+
+		XmlNodeWrapper xNode = contexts.get(0);
+		String resource = StringUtils.trim(xNode.getStringAttribute("resource"));
+
+		org.xson.timer.server.TimerContainer.getInstance().start(resource);
+		log.info("timer server start successful...");
 	}
 
 	private ConnPoolType getConnPoolType(String type) {
@@ -584,9 +679,9 @@ public class XmlConfigurationBuilder {
 		}
 	}
 
-	public DefaultTransactionMatcher getTransactionMatcher() {
-		return transactionMatcher;
-	}
+	// public DefaultTransactionMatcher getTransactionMatcher() {
+	// return transactionMatcher;
+	// }
 
 	public Map<String, DataSourceVo> getDataSourceVoMap() {
 		return dataSourceVoMap;

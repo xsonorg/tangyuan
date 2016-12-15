@@ -11,7 +11,7 @@ public class InternalProcedureNode extends AbstractSqlNode {
 
 	// private static Log log = LogFactory.getLog(InternalProcedureNode.class);
 
-	public InternalProcedureNode(String dsKey, String rowCount, SqlNode sqlNode) {
+	public InternalProcedureNode(String dsKey, String rowCount, TangYuanNode sqlNode) {
 	}
 
 	@Override

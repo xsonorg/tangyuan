@@ -3,7 +3,7 @@ package org.xson.tangyuan.executor;
 /**
  * SqlService执行过程中的异常辅助信息
  */
-public class SqlServiceExceptionInfo {
+public class SqlServiceExceptionInfo implements IServiceExceptionInfo {
 
 	/**
 	 * 是否是一个独立的事务
@@ -11,7 +11,7 @@ public class SqlServiceExceptionInfo {
 	private boolean	newTranscation;
 
 	/**
-	 * 是否已经创建事务
+	 * 是否已经创建事务: (创建事务，或者打开连接)
 	 */
 	private boolean	createdTranscation;
 

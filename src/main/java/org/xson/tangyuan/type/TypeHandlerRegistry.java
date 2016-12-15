@@ -11,7 +11,7 @@ import java.util.Map;
 public final class TypeHandlerRegistry {
 
 	private static final Map<Class<?>, Class<?>>			reversePrimitiveMap		= new HashMap<Class<?>, Class<?>>() {
-																						private static final long	serialVersionUID	= 1L;
+																						private static final long serialVersionUID = 1L;
 
 																						{
 																							put(Byte.class, byte.class);

@@ -5,7 +5,7 @@ import org.xson.tangyuan.task.AsyncTask;
 
 public class CacheUseVo extends CacheBase {
 
-	private Integer	time;
+	private Integer time;
 
 	public CacheUseVo(CacheVo cacheVo, String key, Integer time, String[] ignore, String service) {
 		super(cacheVo, ignore, service);

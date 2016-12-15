@@ -71,9 +71,6 @@ public class SqlServiceMonitor {
 	}
 
 	private void flush(StringBuilder builder) {
-		// if (builder.length() > 0) {
-		// this.writer.writer(builder);
-		// }
 		this.writer.writer(builder);
 	}
 

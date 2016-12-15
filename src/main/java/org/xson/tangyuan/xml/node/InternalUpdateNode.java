@@ -2,6 +2,7 @@ package org.xson.tangyuan.xml.node;
 
 import org.xson.tangyuan.cache.vo.CacheCleanVo;
 import org.xson.tangyuan.executor.ServiceContext;
+import org.xson.tangyuan.executor.SqlServiceContext;
 import org.xson.tangyuan.logging.Log;
 import org.xson.tangyuan.logging.LogFactory;
 import org.xson.tangyuan.ognl.Ognl;
@@ -17,7 +18,7 @@ public class InternalUpdateNode extends AbstractSqlNode {
 	private String			resultKey;
 	private CacheCleanVo	cacheClean;
 
-	public InternalUpdateNode(String dsKey, String rowCount, SqlNode sqlNode, CacheCleanVo cacheClean) {
+	public InternalUpdateNode(String dsKey, String rowCount, TangYuanNode sqlNode, CacheCleanVo cacheClean) {
 		this.dsKey = dsKey;
 		this.resultKey = rowCount;
 		this.sqlNode = sqlNode;
@@ -26,10 +27,12 @@ public class InternalUpdateNode extends AbstractSqlNode {
 	}
 
 	@Override
-	public boolean execute(ServiceContext context, Object arg) throws Throwable {
+	public boolean execute(ServiceContext serviceContext, Object arg) throws Throwable {
+		SqlServiceContext context = serviceContext.getSqlServiceContext();
+
 		context.resetExecEnv();
 
-		sqlNode.execute(context, arg); // 获取sql
+		sqlNode.execute(serviceContext, arg); // 获取sql
 		if (log.isInfoEnabled()) {
 			context.parseSqlLog();
 		}
@@ -39,7 +42,6 @@ public class InternalUpdateNode extends AbstractSqlNode {
 
 		int count = context.executeUpdate(this);
 		if (null != this.resultKey) {
-			// arg.put(this.resultKey, count);
 			Ognl.setValue(arg, this.resultKey, count);
 		}
 
@@ -48,12 +50,11 @@ public class InternalUpdateNode extends AbstractSqlNode {
 		if (log.isInfoEnabled()) {
 			log.info("sql execution time: " + getSlowServiceLog(startTime));
 		}
-		
+
 		if (null != cacheClean) {
 			cacheClean.removeObject(arg);
 		}
 
-		
 		return true;
 	}
 

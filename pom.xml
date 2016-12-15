@@ -4,7 +4,7 @@
 
 	<groupId>org.xson</groupId>
 	<artifactId>tangyuan</artifactId>
-	<version>1.0.0</version>
+	<version>1.1.0</version>
 	<packaging>jar</packaging>
 
 	<name>tangyuan</name>
@@ -23,6 +23,7 @@
 			<email>xson_org@126.com</email>
 		</developer>
 	</developers>
+
 
 	<scm>
 		<url>https://github.com/xsonorg/tangyuan.git</url>
@@ -47,6 +48,7 @@
 		</repository>
 	</distributionManagement>
 
+
 	<dependencies>
 
 		<dependency>
@@ -60,19 +62,6 @@
 			<groupId>org.xson</groupId>
 			<artifactId>common-object</artifactId>
 			<version>1.0.0</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.xson</groupId>
-			<artifactId>xson-redis</artifactId>
-			<version>1.0.0</version>
-			<scope>provided</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>commons-dbcp</groupId>
-			<artifactId>commons-dbcp</artifactId>
-			<version>1.4</version>
 			<scope>provided</scope>
 		</dependency>
 
@@ -83,6 +72,15 @@
 			<scope>provided</scope>
 		</dependency>
 
+		<!-- datasource -->
+
+		<dependency>
+			<groupId>commons-dbcp</groupId>
+			<artifactId>commons-dbcp</artifactId>
+			<version>1.4</version>
+			<scope>provided</scope>
+		</dependency>
+
 		<dependency>
 			<groupId>mysql</groupId>
 			<artifactId>mysql-connector-java</artifactId>
@@ -90,6 +88,7 @@
 			<scope>provided</scope>
 		</dependency>
 
+		<!-- cache -->
 		<dependency>
 			<groupId>net.sf.ehcache</groupId>
 			<artifactId>ehcache</artifactId>
@@ -105,6 +104,20 @@
 		</dependency>
 
 		<dependency>
+			<groupId>org.xson</groupId>
+			<artifactId>xson-redis</artifactId>
+			<version>1.0.0</version>
+			<scope>provided</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>cglib</groupId>
+			<artifactId>cglib</artifactId>
+			<version>2.2.2</version>
+		</dependency>
+
+		<!-- log -->
+		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
 			<version>1.7.16</version>
@@ -118,10 +131,51 @@
 			<scope>provided</scope>
 		</dependency>
 
+		<!-- Timer -->
 		<dependency>
-			<groupId>log4j</groupId>
-			<artifactId>log4j</artifactId>
-			<version>1.2.16</version>
+			<groupId>org.quartz-scheduler</groupId>
+			<artifactId>quartz</artifactId>
+			<version>2.2.2</version>
+			<scope>provided</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>c3p0</groupId>
+					<artifactId>c3p0</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-api</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+		<!-- RPC -->
+
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>servlet-api</artifactId>
+			<version>2.5</version>
+			<scope>provided</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpclient</artifactId>
+			<version>4.3</version>
+			<scope>provided</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpmime</artifactId>
+			<version>4.3</version>
+			<scope>provided</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>2.4</version>
 			<scope>provided</scope>
 		</dependency>
 

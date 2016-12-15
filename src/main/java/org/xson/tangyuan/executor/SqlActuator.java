@@ -82,11 +82,11 @@ public class SqlActuator {
 
 	public XCO selectOneXCO(Connection connection, String sql, List<Object> args, MappingVo resultMap, Integer fetchSize) throws SQLException {
 		List<XCO> results = selectAllXCO(connection, sql, args, resultMap, fetchSize);
-
+		
 		if (results.size() == 1) {
 			return results.get(0);
 		}
-
+		
 		if (results.size() > 1) {
 			throw new SQLException("Statement returned " + results.size() + " results where exactly one (1) was expected in selectOneXCO.");
 		}
@@ -110,11 +110,11 @@ public class SqlActuator {
 
 	public Map<String, Object> selectOne(Connection connection, String sql, List<Object> args) throws SQLException {
 		List<Map<String, Object>> results = selectAll(connection, sql, args);
-
+		
 		if (results.size() == 1) {
 			return results.get(0);
 		}
-
+		
 		if (results.size() > 1) {
 			throw new SQLException("Statement returned " + results.size() + " results where exactly one (1) was expected in selectOne.");
 		}
@@ -123,12 +123,11 @@ public class SqlActuator {
 
 	public Object selectVar(Connection connection, String sql, List<Object> args) throws SQLException {
 		Map<String, Object> results = selectOne(connection, sql, args);
-		if (null == results) {
+		if(null == results){
 			return null;
 		}
 		// if (results.size() != 1) {
-		// throw new SQLException("Statement returned " + results.size() +
-		// " results where exactly one (1) was expected in selectVar.");
+		// throw new SQLException("Statement returned " + results.size() + " results where exactly one (1) was expected in selectVar.");
 		// }
 		Set<Entry<String, Object>> entries = results.entrySet();
 		for (Entry<String, Object> entry : entries) {
@@ -285,10 +284,8 @@ public class SqlActuator {
 			for (int i = 0; i < columnCount; i++) {
 				columns.add(rsmd.getColumnLabel(i + 1));
 				try {
-					// Class<?> type =
-					// Resources.classForName(rsmd.getColumnClassName(i + 1));
-					// TypeHandler<?> typeHandler =
-					// typeHandlerRegistry.getTypeHandler(type);
+					// Class<?> type = Resources.classForName(rsmd.getColumnClassName(i + 1));
+					// TypeHandler<?> typeHandler = typeHandlerRegistry.getTypeHandler(type);
 					int columnType = rsmd.getColumnType(i + 1);
 					JdbcType jdbcType = JdbcType.forCode(columnType);
 					TypeHandler<?> typeHandler = typeHandlerRegistry.getTypeHandler(jdbcType);
@@ -308,8 +305,7 @@ public class SqlActuator {
 					for (int i = 0, n = columns.size(); i < n; i++) {
 						String name = columns.get(i);
 						TypeHandler<?> handler = typeHandlers.get(i);
-						// row.put(name.toUpperCase(Locale.ENGLISH),
-						// handler.getResult(rs, name));
+						// row.put(name.toUpperCase(Locale.ENGLISH), handler.getResult(rs, name));
 						row.put(name, handler.getResult(rs, name));
 					}
 					list.add(row);
@@ -349,10 +345,8 @@ public class SqlActuator {
 					// System.out.println(rsmd.getColumnTypeName(i + 1));
 					// rsmd.getColumnType(column)
 					// System.out.println();
-					// Class<?> type =
-					// Resources.classForName(rsmd.getColumnClassName(i + 1));
-					// TypeHandler<?> typeHandler =
-					// typeHandlerRegistry.getTypeHandler(type);
+					// Class<?> type = Resources.classForName(rsmd.getColumnClassName(i + 1));
+					// TypeHandler<?> typeHandler = typeHandlerRegistry.getTypeHandler(type);
 					int columnType = rsmd.getColumnType(i + 1);
 					JdbcType jdbcType = JdbcType.forCode(columnType);
 					TypeHandler<?> typeHandler = typeHandlerRegistry.getTypeHandler(jdbcType);
