@@ -23,7 +23,7 @@ public class XMLJavaNodeBuilder extends XmlNodeBuilder {
 
 	private XmlNodeWrapper	root	= null;
 
-	private CglibProxy		proxy	= new CglibProxy();
+	// private CglibProxy proxy = new CglibProxy();
 
 	@Override
 	public void parseRef() {
@@ -87,7 +87,8 @@ public class XMLJavaNodeBuilder extends XmlNodeBuilder {
 	private void parseClass(String ns, String className, List<String> includeList, List<String> excludeList) {
 		Class<?> clazz = ClassUtils.forName(className);
 
-		Object instance = proxy.getProxy(clazz);
+		// Object instance = proxy.getProxy(clazz);
+		Object instance = new CglibProxy().getProxy(clazz);
 
 		Method[] methods = clazz.getMethods();
 		for (Method m : methods) {

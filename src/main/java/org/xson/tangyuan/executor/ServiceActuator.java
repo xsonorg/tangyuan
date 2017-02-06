@@ -46,13 +46,13 @@ public class ServiceActuator {
 					context = null;
 
 					ServiceContext newContext = new ServiceContext();
-					log.debug("open a new context. hashCode[" + context.hashCode() + "] in new");
+					log.debug("open a new context. hashCode[" + newContext.hashCode() + "] in new");
 					contextQueue.push(newContext);
 
 					returnContext = newContext;
 				} else if (null == context && null != contextQueue) {
 					ServiceContext newContext = new ServiceContext();
-					log.debug("open a new context. hashCode[" + context.hashCode() + "] in new");
+					log.debug("open a new context. hashCode[" + newContext.hashCode() + "] in new");
 					contextQueue.push(newContext);
 
 					returnContext = newContext;
@@ -68,7 +68,7 @@ public class ServiceActuator {
 					throw new ServiceException("Wrong context and contextQueue");
 				}
 
-				log.debug("follow an existing context. hashCode[" + context.hashCode() + "], context[" + (context.counter + 1) + "]");
+				log.debug("follow an existing context. hashCode[" + returnContext.hashCode() + "], context[" + (returnContext.counter + 1) + "]");
 				returnContext.counter++;
 			}
 
@@ -259,7 +259,7 @@ public class ServiceActuator {
 		TangYuanContainer.getInstance().addAsyncTask(new AsyncTask() {
 			@Override
 			public void run() {
-				ServiceContext context = begin(false);
+				ServiceContext context = begin(false);// 这里是在新的线程中
 				context.updateMonitor(serviceId);// monitor
 				try {
 					Object data = converter.parameterConvert(arg, service.getResultType());
@@ -279,135 +279,4 @@ public class ServiceActuator {
 			}
 		});
 	}
-
-	// public static void executeAsync(final String serviceId, final Object arg) {
-	// log.info("execute async service: " + serviceId);
-	// final AbstractServiceNode service = TangYuanContainer.getInstance().getService(serviceId);
-	// if (null == service) {
-	// log.error("Service does not exist: " + serviceId);
-	// return;
-	// }
-	// TangYuanContainer.getInstance().addAsyncTask(new AsyncTask() {
-	// @Override
-	// public void run() {
-	// ServiceContext context = new ServiceContext();
-	// // monitor
-	// context.updateMonitor(serviceId);
-	// try {
-	// Object data = converter.parameterConvert(arg, service.getResultType());
-	// service.execute(context, data);
-	// // 这里是最终的提交
-	// context.finish();
-	// context.setResult(null);
-	// } catch (Throwable e) {
-	// // 这里是最终的回滚
-	// context.finishOnException();
-	// log.error("Execute service exception: " + serviceId, e);
-	// } finally {
-	// context.stopMonitor();
-	// }
-	// }
-	// });
-	// }
-
-	// /** 方法之前的线程调用 */
-	// private static ServiceContext begin() {
-	// ServiceContext context = contextThreadLocal.get();
-	// if (null == context) {
-	// context = new ServiceContext();
-	// log.debug("open a new context. hashCode[" + context.hashCode() + "]");
-	// contextThreadLocal.set(context);
-	// } else {
-	// log.debug("follow an existing context. hashCode[" + context.hashCode() + "], context[" + (context.counter + 1) + "]");
-	// context.counter++;
-	// }
-	// return context;
-	// }
-
-	// /** 无异常的结束 */
-	// private static void endOnSuccess() {
-	// ServiceContext context = contextThreadLocal.get();
-	// if (null != context) {
-	// log.debug("context--. hashCode[" + context.hashCode() + "], context[" + (context.counter - 1) + "]");
-	// if (--context.counter < 1) {
-	// if (null == context.getExceptionInfo()) {
-	// try {
-	// // 这里是确定的提交
-	// context.finish();
-	// } catch (Throwable e) {
-	// context.finishOnException();
-	// log.error("SqlService commit exception", e);
-	// }
-	// } else {
-	// context.finishOnException();
-	// }
-	// contextThreadLocal.remove();
-	// log.debug("close a context. hashCode[" + context.hashCode() + "]");
-	// // monitor
-	// context.stopMonitor();
-	// }
-	// } else {
-	// contextThreadLocal.remove();
-	// }
-	// }
-
-	// /** 发生异常的结束 */
-	// protected static void endOnException(Throwable throwable, AbstractServiceNode service) {
-	// // 如果当前可以处理,当前处理; 如果当前不能处理,上抛,不做日志输出
-	// ServiceContext context = contextThreadLocal.get();
-	// if (--context.counter < 1) {
-	// context.finishOnException();
-	// log.error("", throwable);
-	// context.stopMonitor();
-	// contextThreadLocal.remove();
-	// // 最后一层抛出的异常
-	// if (throwable instanceof ServiceException) {
-	// throw (ServiceException) throwable;
-	// }
-	// throw new ServiceException("Execute service exception: " + service.getServiceKey(), throwable);
-	// } else {
-	// ServiceException ex = null;
-	// try {
-	// context.onException(service.getServiceType(), throwable, "Execute service exception: " + service.getServiceKey());
-	// } catch (ServiceException e) {
-	// ex = e;
-	// }
-	// if (null != ex) {
-	// throw ex;
-	// }
-	// }
-	// }
-
-	// @SuppressWarnings("unchecked")
-	// public static <T> T executeAlone(String serviceId, Object arg, boolean throwException) throws ServiceException {
-	// log.info("execute alone service: " + serviceId);
-	// AbstractServiceNode service = TangYuanContainer.getInstance().getService(serviceId);
-	// if (null == service) {
-	// throw new ServiceException("Service does not exist: " + serviceId);
-	// }
-	// ServiceContext context = begin(true);
-	// // monitor
-	// context.updateMonitor(serviceId);
-	// Object result = null;
-	// try {
-	// Object data = converter.parameterConvert(arg, service.getResultType());
-	// service.execute(context, data);
-	// context.finish();
-	// result = service.getResult(context);// 只有类型转换是发生异常
-	// } catch (Throwable e) {
-	// context.finishOnException();
-	// if (throwException) {
-	// if (e instanceof ServiceException) {
-	// throw (ServiceException) e;
-	// } else {
-	// throw new ServiceException("Execute service exception: " + serviceId, e);
-	// }
-	// } else {
-	// log.error("Execute service exception: " + serviceId, e);
-	// }
-	// } finally {
-	// context.stopMonitor();
-	// }
-	// return (T) result;
-	// }
 }

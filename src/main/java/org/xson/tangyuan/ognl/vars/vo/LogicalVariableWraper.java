@@ -151,7 +151,7 @@ public class LogicalVariableWraper {
 		// }
 
 		// fix 空值判断
-		if (null == x || null != y) {
+		if (null == x || null == y) {
 			return objectCompare(x, y);
 		}
 
