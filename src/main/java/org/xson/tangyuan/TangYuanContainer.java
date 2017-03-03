@@ -3,6 +3,7 @@ package org.xson.tangyuan;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.xson.common.object.XCO;
 import org.xson.tangyuan.cache.vo.CacheVo;
@@ -88,6 +89,10 @@ public class TangYuanContainer {
 
 	public AbstractServiceNode getService(String serviceKey) {
 		return tangyuanServices.get(serviceKey);
+	}
+
+	public Set<String> getServicesKeySet() {
+		return this.tangyuanServices.keySet();
 	}
 
 	public ShardingDefVo getShardingDef(String key) {
