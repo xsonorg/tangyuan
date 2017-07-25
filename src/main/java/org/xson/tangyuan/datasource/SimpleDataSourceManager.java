@@ -21,7 +21,7 @@ public class SimpleDataSourceManager extends DataSourceManager {
 	}
 
 	public Connection getConnection(String dsKey) throws SQLException {
-		return singleDataSource.getConnection();
+		return singleDataSource.getConnection(dsKey);
 	}
 
 	public void recycleConnection(String dsKey, Connection connection) throws SQLException {

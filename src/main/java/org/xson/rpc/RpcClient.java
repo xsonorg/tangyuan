@@ -16,7 +16,9 @@ import org.xson.common.object.XCO;
 
 public class RpcClient {
 
-	private static Logger logger = LoggerFactory.getLogger(RpcClient.class);
+	private static Logger		logger		= LoggerFactory.getLogger(RpcClient.class);
+
+	protected static RpcBridge	jpcBridge	= null;
 
 	private static String sendPostRequest(String url, byte[] buffer, String header) throws Throwable {
 		// TODO: 默认值设置
@@ -52,7 +54,19 @@ public class RpcClient {
 			String xml = request.toXMLString();
 			logger.info("client request args: " + xml);
 			// TODO: x-application/xco
-			String result = sendPostRequest(url, xml.getBytes("UTF-8"), "x-application/xco");
+			String result = null;
+			if (null == jpcBridge) {
+				result = sendPostRequest(url, xml.getBytes("UTF-8"), "x-application/xco");
+			} else {
+				URI uri = jpcBridge.inJvm(url);
+				if (null != uri) {
+					XCO xcoResult = (XCO) jpcBridge.inJvmCall(uri, request);
+					logger.info("client response: " + xcoResult.toXMLString());
+					return xcoResult;
+				} else {
+					result = sendPostRequest(url, xml.getBytes("UTF-8"), "x-application/xco");
+				}
+			}
 			logger.info("client response: " + result);
 			return XCO.fromXML(result);
 		} catch (Throwable e) {

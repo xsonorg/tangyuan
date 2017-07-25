@@ -44,7 +44,7 @@ public class MuiltDataSourceManager extends DataSourceManager {
 		if (null == dataSource) {
 			throw new SQLException("不存在的DataSource: " + dsKey);
 		}
-		return dataSource.getConnection();
+		return dataSource.getConnection(dsKey);
 	}
 
 	@Override

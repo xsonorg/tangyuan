@@ -12,6 +12,10 @@ public abstract class AbstractSqlNode extends AbstractServiceNode {
 
 	protected boolean					simple;
 
+	protected AbstractSqlNode() {
+		this.serviceType = TangYuanServiceType.SQL;
+	}
+
 	public XTransactionDefinition getTxDef() {
 		return txDef;
 	}

@@ -28,4 +28,9 @@ public class DataSourceGroupVo extends DataSourceVo {
 		return count;
 	}
 
+	public void setGroupNum(int start, int end) {
+		this.start = start;
+		this.end = end;
+		this.count = this.end - this.start + 1;
+	}
 }

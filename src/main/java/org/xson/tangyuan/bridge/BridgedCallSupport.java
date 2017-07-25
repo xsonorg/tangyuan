@@ -16,39 +16,47 @@ public class BridgedCallSupport {
 
 	private static Map<String, XMLBridgedCallHandler>	handlerMap	= new HashMap<String, XMLBridgedCallHandler>(8);
 
-	public static String								separator	= "://";
+	private static String								separator	= "://";
 
-	/**
-	 * 注册处理器: xxx://
-	 */
+	static {
+		HttpXcoBridgedCallHandler hxbcHandler = new HttpXcoBridgedCallHandler();
+
+		register("http".toLowerCase(), hxbcHandler);
+		register("https".toLowerCase(), hxbcHandler);
+	}
+
+	/** 注册处理器: xxx:// */
 	public static void register(String protocol, XMLBridgedCallHandler handler) {
 		handlerMap.put(protocol.toUpperCase(), handler);
+	}
+
+	/** 是否需要桥接 */
+	public static boolean isBridged(String service) {
+		if (service.indexOf(BridgedCallSupport.separator) > 0) {
+			return true;
+		}
+		return false;
 	}
 
 	private static String getProtocol(int pos, String service) {
 		return service.substring(0, pos);
 	}
 
-	private static String getRealService(int pos, String service) {
-		return service.substring(pos + separator.length());
-	}
-
-	public static Object call(String service, CallMode mode, final Object request) {
+	public static Object call(final String service, CallMode mode, final Object request) {
 		int pos = service.indexOf(separator);
 		String protocol = getProtocol(pos, service);
-		final String realService = getRealService(pos, service);
-		final XMLBridgedCallHandler handler = handlerMap.get(protocol.toUpperCase() + separator);
+		final XMLBridgedCallHandler handler = handlerMap.get(protocol.toUpperCase());
 		if (null == handler) {
-			throw new TangYuanException("不存在的调用桥接器: " + service);
+			throw new TangYuanException("Call bridge does not exist: " + service);
 		}
 		if (CallMode.ASYNC != mode) {
-			return handler.call(realService, request);
+			return handler.call(service, request);
 		} else {
 			TangYuanContainer.getInstance().addAsyncTask(new AsyncTask() {
 				@Override
 				public void run() {
 					try {
-						handler.call(realService, request);
+						handler.call(service, request);
 					} catch (Throwable e) {
 						log.error(null, e);
 					}
@@ -57,4 +65,8 @@ public class BridgedCallSupport {
 			return null;
 		}
 	}
+
+	// private static String getRealService(int pos, String service) {
+	// return service.substring(pos + separator.length());
+	// }
 }

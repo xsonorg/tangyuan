@@ -14,26 +14,49 @@ import org.xson.tangyuan.logging.Log;
 import org.xson.tangyuan.logging.LogFactory;
 import org.xson.tangyuan.ognl.Ognl;
 import org.xson.tangyuan.ognl.vars.Variable;
+import org.xson.tangyuan.ognl.vars.vo.NormalVariable;
 
+/**
+ * 调用节点
+ * 
+ * <pre>
+ * 当前执行模式:通过mode属性控制 <br />
+ * 目标执行模式:通过URL控制<br />
+ */
 public class CallNode implements TangYuanNode {
 
 	private static Log					log			= LogFactory.getLog(CallNode.class);
-	private String						service;
+
+	private Object						service;
 	private String						resultKey;
+
+	// 本地当前执行的模式
 	private CallMode					mode;
+
 	private List<CallNodeParameterItem>	itemList;
-	// 当发生异常时候, 异常结果的描述key
+
+	/** 当发生异常时候, 异常结果的描述key */
 	private String						exResultKey;
-	// 桥接调用
-	private boolean						bridgedCall	= false;
+
+	/** 桥接调用[0:不确认, 1:桥接, 2:本地] */
+	private BridgedCallMode				bridgedCall	= BridgedCallMode.DYNAMIC;
 
 	public enum CallMode {
-		// 继承之前的上下文
+		/** 继承之前的上下文 */
 		EXTEND,
-		// 单独的上下文
+		/** 单独的上下文 */
 		ALONE,
-		// 异步方式
+		/** 异步方式 */
 		ASYNC
+	}
+
+	enum BridgedCallMode {
+		/** 动态的, 需要每次计算 */
+		DYNAMIC,
+		/** 桥接 */
+		BRIDGED,
+		/** 本地 */
+		LOCAL
 	}
 
 	protected static class CallNodeParameterItem {
@@ -47,15 +70,26 @@ public class CallNode implements TangYuanNode {
 		Variable	value;
 	}
 
-	public CallNode(String service, String resultKey, CallMode mode, List<CallNodeParameterItem> itemList, String exResultKey) {
+	public CallNode(Object service, String resultKey, CallMode mode, List<CallNodeParameterItem> itemList, String exResultKey) {
 		this.service = service;
-		if (this.service.indexOf(BridgedCallSupport.separator) > 0) {
-			bridgedCall = true;
-		}
 		this.resultKey = resultKey;
 		this.mode = mode;
+		if (null == this.mode) {
+			this.mode = CallMode.EXTEND;
+		}
 		this.itemList = itemList;
 		this.exResultKey = exResultKey;
+		if (this.service instanceof String) {
+			String _service = (String) this.service;
+			this.bridgedCall = getBridged(_service);
+		}
+	}
+
+	private BridgedCallMode getBridged(String _service) {
+		if (BridgedCallSupport.isBridged(_service)) {
+			return BridgedCallMode.BRIDGED;
+		}
+		return BridgedCallMode.LOCAL;
 	}
 
 	@Override
@@ -76,86 +110,115 @@ public class CallNode implements TangYuanNode {
 				}
 				parameter = map;
 			} else {
-				throw new TangYuanException("不支持的参数类型:" + arg.getClass());
+				throw new TangYuanException("Unsupported parameter type: " + arg.getClass());
 			}
 		}
 
-		if (bridgedCall) {
-			bridgedExecute(arg, parameter);
+		String _service = null;
+		BridgedCallMode _bridgedCall = this.bridgedCall;
+
+		if (BridgedCallMode.DYNAMIC != _bridgedCall) {
+			_service = (String) this.service;
+		} else {
+			_service = (String) ((NormalVariable) this.service).getValue(arg);
+			if (null == _service) {
+				throw new TangYuanException("The calling service name variable is null: " + ((NormalVariable) this.service).getOriginal());
+			}
+			_bridgedCall = getBridged(_service);
+		}
+
+		if (BridgedCallMode.BRIDGED == _bridgedCall) {
+			bridgedExecute(_service, arg, parameter);
 			return true;
 		}
 
-		if (CallMode.EXTEND == mode) {
-			// Object result = ServiceActuator.executeContext(service, context, parameter);
-			Object result = ServiceActuator.execute(service, parameter);
+		// CallMode _mode = getCallMode(_bridgedCall, _service);
+		CallMode _mode = this.mode;
+
+		if (CallMode.EXTEND == _mode) {
+			Object result = ServiceActuator.execute(_service, parameter);
 			if (null != this.resultKey) {
 				Ognl.setValue(arg, this.resultKey, result);
 			}
 			// 这里的异常上抛
-		} else if (CallMode.ALONE == mode) {
+		} else if (CallMode.ALONE == _mode) {
 			try {
-				Object result = ServiceActuator.executeAlone(service, parameter);
+				Object result = ServiceActuator.executeAlone(_service, parameter);
 				if (null != this.resultKey) {
 					Ognl.setValue(arg, this.resultKey, result);
 				}
 			} catch (ServiceException e) {
 				if (null != exResultKey) {
-					// 放置错误信息
-					if (XCO.class == arg.getClass()) {
-						XCO xco = new XCO();
-						xco.setIntegerValue("code", e.getErrorCode());
-						xco.setStringValue("message", e.getErrorMessage());
-						Ognl.setValue(arg, this.exResultKey, xco);
-					} else if (Map.class.isAssignableFrom(arg.getClass())) {
-						Map<String, Object> map = new HashMap<String, Object>();
-						map.put("code", e.getErrorCode());
-						map.put("message", e.getErrorMessage());
-						Ognl.setValue(arg, this.exResultKey, map);
-					} else {
-						throw new TangYuanException("不支持的参数类型:" + arg.getClass());
-					}
+					Object result = getResultWithException(_service, arg, e);
+					Ognl.setValue(arg, this.exResultKey, result);
 				}
 				log.error("call service error: " + service, e);
 			}
 		} else {
-			ServiceActuator.executeAsync(service, parameter);
+			ServiceActuator.executeAsync(_service, parameter);
 		}
 		return true;
 	}
 
-	private void bridgedExecute(Object arg, Object parameter) {
-		if (CallMode.EXTEND == mode) {
-			Object result = BridgedCallSupport.call(service, mode, parameter);
-			if (null != this.resultKey) {
-				Ognl.setValue(arg, this.resultKey, result);
-			}
-		} else if (CallMode.ALONE == mode) {
-			try {
-				Object result = BridgedCallSupport.call(service, mode, parameter);
-				if (null != this.resultKey) {
-					Ognl.setValue(arg, this.resultKey, result);
-				}
-			} catch (Exception e) {
+	/** 执行桥接调用 */
+	private void bridgedExecute(String _service, Object arg, Object parameter) {
+
+		Object result = null;
+		Throwable ex = null;
+
+		CallMode _mode = this.mode;
+
+		try {
+			result = BridgedCallSupport.call(_service, _mode, parameter);
+		} catch (Throwable e) {
+			ex = e;
+		}
+
+		if (null != ex) {
+			if (CallMode.ALONE == _mode) {
 				if (null != exResultKey) {
-					// 放置错误信息
-					if (XCO.class == arg.getClass()) {
-						XCO xco = new XCO();
-						xco.setIntegerValue("code", -1);
-						xco.setStringValue("message", "服务调用失败: " + service);
-						Ognl.setValue(arg, this.exResultKey, xco);
-					} else if (Map.class.isAssignableFrom(arg.getClass())) {
-						Map<String, Object> map = new HashMap<String, Object>();
-						map.put("code", -1);
-						map.put("message", "服务调用失败: " + service);
-						Ognl.setValue(arg, this.exResultKey, map);
-					} else {
-						throw new TangYuanException("不支持的参数类型:" + arg.getClass());
-					}
+					result = getResultWithException(_service, arg, ex);
+					Ognl.setValue(arg, this.exResultKey, result);
 				}
-				log.error("call service error: " + service, e);
+				log.error("bridged call service error: " + _service, ex);
+				return;
+			} else {
+				if (ex instanceof TangYuanException) {
+					throw (TangYuanException) ex;
+				} else {
+					throw new TangYuanException(ex);
+				}
 			}
-		} else {
-			BridgedCallSupport.call(service, mode, parameter);
+		}
+
+		if (null != this.resultKey && CallMode.ASYNC != _mode) {
+			Ognl.setValue(arg, this.resultKey, result);
 		}
 	}
+
+	/** 放置错误信息 */
+	private Object getResultWithException(String _service, Object arg, Throwable ex) {
+		int errorCode = -1;
+		String errorMessage = "Bridge call exception";// service
+		if (ex instanceof ServiceException) {
+			ServiceException sex = (ServiceException) ex;
+			errorCode = sex.getErrorCode();
+			errorMessage = sex.getErrorMessage();
+		}
+
+		if (XCO.class == arg.getClass()) {
+			XCO xco = new XCO();
+			xco.setIntegerValue("code", errorCode);
+			xco.setStringValue("message", errorMessage);
+			return xco;
+		} else if (Map.class.isAssignableFrom(arg.getClass())) {
+			Map<String, Object> map = new HashMap<String, Object>();
+			map.put("code", errorCode);
+			map.put("message", errorMessage);
+			return map;
+		} else {
+			throw new TangYuanException("Unsupported parameter type: " + arg.getClass());
+		}
+	}
+
 }

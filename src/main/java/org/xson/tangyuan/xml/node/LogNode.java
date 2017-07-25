@@ -5,29 +5,28 @@ import java.util.List;
 import org.xson.tangyuan.executor.ServiceContext;
 import org.xson.tangyuan.logging.Log;
 import org.xson.tangyuan.logging.LogFactory;
+import org.xson.tangyuan.ognl.vars.ArgSelfVo;
 import org.xson.tangyuan.ognl.vars.Variable;
 import org.xson.tangyuan.xml.parsing.TokenParserUtil;
 
 public class LogNode implements TangYuanNode {
 
-	private static Log			log					= LogFactory.getLog(LogNode.class);
-
-	private final static String	LOG_SPECIAL_MARK	= "$$ARG";
+	private static Log		log				= LogFactory.getLog(LogNode.class);
 
 	/**
 	 * 5:ERROR, 4:WARN, 3:INFO, 2:DEBUG, 1:TRACE
 	 */
-	private int					level;
+	private int				level;
 
 	/**
 	 * 这是{a}一条{b}日志
 	 */
-	private String				originalText		= null;
+	private String			originalText	= null;
 
 	/**
 	 * 里边包含字符串和动态变量
 	 */
-	private List<Object>		logUnits			= null;
+	private List<Object>	logUnits		= null;
 
 	public LogNode(int level, String text) {
 		this.level = level;
@@ -53,7 +52,8 @@ public class LogNode implements TangYuanNode {
 				} else {
 					Variable varVo = (Variable) obj;
 					Object value = varVo.getValue(arg);
-					if (null == value && LOG_SPECIAL_MARK.equalsIgnoreCase(varVo.getOriginal())) {
+					// if (null == value && LOG_SPECIAL_MARK.equalsIgnoreCase(varVo.getOriginal())) {
+					if (null == value && ArgSelfVo.AEG_SELF_MARK.equalsIgnoreCase(varVo.getOriginal())) {
 						value = arg.toString();
 					}
 					builder.append((null != value) ? value.toString() : "null");

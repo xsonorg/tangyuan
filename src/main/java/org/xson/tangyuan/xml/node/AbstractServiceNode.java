@@ -6,7 +6,7 @@ public abstract class AbstractServiceNode implements TangYuanNode {
 
 	/** 服务类型 */
 	public enum TangYuanServiceType {
-		SQL, MONGO, HIVE, HBASE, JAVA
+		SQL, MONGO, HIVE, HBASE, JAVA, MQ
 	}
 
 	/** 服务ID */
@@ -21,6 +21,10 @@ public abstract class AbstractServiceNode implements TangYuanNode {
 	protected Class<?>				resultType;
 
 	protected TangYuanServiceType	serviceType;
+
+	protected boolean				beforeAspect;
+
+	protected boolean				afterAspect;
 
 	public String getId() {
 		return id;
@@ -40,6 +44,22 @@ public abstract class AbstractServiceNode implements TangYuanNode {
 
 	public TangYuanServiceType getServiceType() {
 		return serviceType;
+	}
+
+	public boolean hasBeforeAspect() {
+		return beforeAspect;
+	}
+
+	public void setBeforeAspect(boolean beforeAspect) {
+		this.beforeAspect = beforeAspect;
+	}
+
+	public boolean hasAfterAspect() {
+		return afterAspect;
+	}
+
+	public void setAfterAspect(boolean afterAspect) {
+		this.afterAspect = afterAspect;
 	}
 
 	/** 获取返回对象 */

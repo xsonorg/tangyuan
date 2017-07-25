@@ -21,7 +21,7 @@ public class DBCPDataSource extends AbstractDataSource {
 	}
 
 	@Override
-	public Connection getConnection() throws SQLException {
+	public Connection getConnection(String dsKey) throws SQLException {
 		return dataSource.getConnection();
 	}
 

@@ -3,6 +3,7 @@ package org.xson.tangyuan.executor;
 import java.util.LinkedList;
 
 import org.xson.tangyuan.TangYuanContainer;
+import org.xson.tangyuan.aspect.AspectSupport;
 import org.xson.tangyuan.logging.Log;
 import org.xson.tangyuan.logging.LogFactory;
 import org.xson.tangyuan.ognl.convert.ParameterConverter;
@@ -16,6 +17,10 @@ public class ServiceActuator {
 	private static ThreadLocal<ThreadServiceContext>	contextThreadLocal	= new ThreadLocal<ThreadServiceContext>();
 
 	private static ParameterConverter					converter			= new ParameterConverter();
+
+	private static AspectSupport						aspectSupport		= AspectSupport.getInstance();
+
+	private static volatile boolean						running				= true;
 
 	/** 线程中的上下文 */
 	static class ThreadServiceContext {
@@ -105,6 +110,21 @@ public class ServiceActuator {
 		}
 	}
 
+	public static void shutdown() {
+		running = false;
+	}
+
+	/** 检查是否是还有存在的上下文中调用, 用于用户安全的关闭 */
+	private static void check() {
+		if (running) {
+			return;
+		}
+		boolean existingContext = (null == contextThreadLocal.get()) ? false : true;
+		if (!existingContext) {
+			throw new ServiceException("The current system is shutting down and no longer handles the new service.");
+		}
+	}
+
 	/** 方法之前的线程调用 */
 	private static ServiceContext begin(boolean isNew) {
 		ThreadServiceContext threadContext = contextThreadLocal.get();
@@ -180,11 +200,18 @@ public class ServiceActuator {
 
 	@SuppressWarnings("unchecked")
 	public static <T> T execute(String serviceId, Object arg) throws ServiceException {
+
+		// 检查系统是否已经正在关闭中了
+		check();
+
 		log.info("actuator service: " + serviceId);
 		AbstractServiceNode service = TangYuanContainer.getInstance().getService(serviceId);
 		if (null == service) {
 			throw new ServiceException("Service does not exist: " + serviceId);// 上抛异常
 		}
+
+		aspectSupport.execBefore(service, arg);// 前置切面
+
 		// A. 获取上下文
 		ServiceContext context = begin(false);
 		// B.执行服务
@@ -198,10 +225,26 @@ public class ServiceActuator {
 		} catch (Throwable e) {
 			ex = e;
 		} finally {
-			if (null != ex) {
-				endOnException(ex, service);
-			} else {
-				endOnSuccess();
+			// if (null != ex) {
+			// endOnException(ex, service);
+			// } else {
+			// endOnSuccess();
+			// }
+
+			// 新增后置处理
+			ServiceException throwEx = null;
+			try {
+				if (null != ex) {
+					endOnException(ex, service);
+				} else {
+					endOnSuccess();
+				}
+			} catch (ServiceException se) {
+				throwEx = se;
+			}
+			aspectSupport.execAfter(service, arg, result, ex);
+			if (null != throwEx) {
+				throw throwEx;
 			}
 		}
 		return (T) result;
@@ -211,6 +254,9 @@ public class ServiceActuator {
 	 * 单独环境
 	 */
 	public static <T> T executeAlone(String serviceId, Object arg) throws ServiceException {
+		// 检查系统是否已经正在关闭中了
+		check();
+
 		return executeAlone(serviceId, arg, true);
 	}
 
@@ -221,6 +267,9 @@ public class ServiceActuator {
 		if (null == service) {
 			throw new ServiceException("Service does not exist: " + serviceId);
 		}
+
+		aspectSupport.execBefore(service, arg);// 前置切面
+
 		ServiceContext context = begin(true);
 		context.updateMonitor(serviceId);// monitor
 		Object result = null;
@@ -232,17 +281,40 @@ public class ServiceActuator {
 		} catch (Throwable e) {
 			ex = e;
 		} finally {
-			if (null != ex) {
-				try {
+			// if (null != ex) {
+			// try {
+			// endOnException(ex, service);
+			// } catch (ServiceException e) {
+			// if (throwException) {
+			// throw e;
+			// }
+			// }
+			// } else {
+			// endOnSuccess();
+			// }
+
+			// 新增后置处理
+			ServiceException throwEx = null;
+			try {
+				if (null != ex) {
 					endOnException(ex, service);
-				} catch (ServiceException e) {
-					if (throwException) {
-						throw e;
-					}
+				} else {
+					endOnSuccess();
 				}
-			} else {
-				endOnSuccess();
+			} catch (ServiceException se) {
+				throwEx = se;
 			}
+
+			aspectSupport.execAfter(service, arg, result, ex);
+
+			if (null != throwEx) {
+				if (throwException) {
+					throw throwEx;
+				} else {
+					log.error("Execute service exception: " + service.getServiceKey(), throwEx);
+				}
+			}
+
 		}
 		return (T) result;
 	}
@@ -251,23 +323,34 @@ public class ServiceActuator {
 	 * 单独环境, 异步执行
 	 */
 	public static void executeAsync(final String serviceId, final Object arg) {
+
+		// 检查系统是否已经正在关闭中了
+		check();
+
 		log.info("execute async service: " + serviceId);
 		final AbstractServiceNode service = TangYuanContainer.getInstance().getService(serviceId);
 		if (null == service) {
 			throw new ServiceException("Service does not exist: " + serviceId);
 		}
+
+		aspectSupport.execBefore(service, arg);// 前置切面
+
 		TangYuanContainer.getInstance().addAsyncTask(new AsyncTask() {
 			@Override
 			public void run() {
 				ServiceContext context = begin(false);// 这里是在新的线程中
 				context.updateMonitor(serviceId);// monitor
+				Object result = null;
+				Throwable ex = null;
 				try {
 					Object data = converter.parameterConvert(arg, service.getResultType());
 					service.execute(context, data);
+					result = service.getResult(context);
 					// 这里是最终的提交
 					context.finish();
 					context.setResult(null);
 				} catch (Throwable e) {
+					ex = e;
 					// 这里是最终的回滚
 					context.finishOnException();
 					log.error("Execute service exception: " + serviceId, e);
@@ -275,6 +358,9 @@ public class ServiceActuator {
 					context.stopMonitor();
 					contextThreadLocal.remove();
 					log.debug("close a context. hashCode[" + context.hashCode() + "]");
+
+					// 新增后置处理
+					aspectSupport.execAfter(service, arg, result, ex);
 				}
 			}
 		});

@@ -7,9 +7,11 @@ public class ServiceException extends TangYuanException {
 
 	private static final long	serialVersionUID	= 1L;
 
-	private int					errorCode			= TangYuanContainer.getInstance().getSqlServiceErrorCode();
+	// private int errorCode = TangYuanContainer.getInstance().getSqlServiceErrorCode();
+	// private String errorMessage = TangYuanContainer.getInstance().getSqlServiceErrorMessage();
 
-	private String				errorMessage		= TangYuanContainer.getInstance().getSqlServiceErrorMessage();
+	private int					errorCode			= TangYuanContainer.getInstance().getErrorCode();
+	private String				errorMessage		= TangYuanContainer.getInstance().getErrorMessage();
 
 	public ServiceException() {
 		super();

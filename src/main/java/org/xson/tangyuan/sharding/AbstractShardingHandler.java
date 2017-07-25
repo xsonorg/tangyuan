@@ -27,6 +27,26 @@ public abstract class AbstractShardingHandler implements ShardingHandler {
 		return null;
 	}
 
+	protected ShardingResult getResult(String tableIndex, String dbIndex, ShardingDefVo defVo, ShardingArgVo argVo) {
+		// 还需要根据数据源类型判断是否只有一个数据库
+		String dataSource = defVo.getDataSource();
+		if (defVo.isDataSourceGroup()) {
+			dataSource = dataSource + "." + dbIndex;
+		}
+		if (ShardingTemplate.DT == argVo.getTemplate()) {
+			return new ShardingResult(defVo.getTable() + tableIndex, dataSource);
+		} else if (ShardingTemplate.T == argVo.getTemplate()) {
+			return new ShardingResult(defVo.getTable() + tableIndex, null);
+		} else if (ShardingTemplate.DI == argVo.getTemplate()) {
+			return new ShardingResult(tableIndex, dataSource);
+		} else if (ShardingTemplate.I == argVo.getTemplate()) {
+			return new ShardingResult(tableIndex, null);
+		} else if (ShardingTemplate.D == argVo.getTemplate()) {
+			return new ShardingResult("", dataSource);
+		}
+		return null;
+	}
+
 	protected long getValue(Object value) {
 		if (null == value) {
 			throw new ShardingException("分库分表对象值为空");

@@ -5,13 +5,13 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.xson.tangyuan.TangYuanContainer;
 import org.xson.tangyuan.executor.CglibProxy;
 import org.xson.tangyuan.logging.Log;
 import org.xson.tangyuan.logging.LogFactory;
 import org.xson.tangyuan.util.ClassUtils;
 import org.xson.tangyuan.util.PatternMatchUtils;
 import org.xson.tangyuan.util.StringUtils;
+import org.xson.tangyuan.util.TYUtils;
 import org.xson.tangyuan.xml.XmlNodeBuilder;
 import org.xson.tangyuan.xml.XmlNodeWrapper;
 import org.xson.tangyuan.xml.XmlParseContext;
@@ -26,8 +26,12 @@ public class XMLJavaNodeBuilder extends XmlNodeBuilder {
 	// private CglibProxy proxy = new CglibProxy();
 
 	@Override
+	public Log getLog() {
+		return this.log;
+	}
+
+	@Override
 	public void parseRef() {
-		// TODO Auto-generated method stub
 	}
 
 	@Override
@@ -131,13 +135,16 @@ public class XMLJavaNodeBuilder extends XmlNodeBuilder {
 
 			AbstractServiceNode service = createService(instance, m, ns);
 
-			TangYuanContainer.getInstance().addService(service);
-			log.info("add <service> node: " + service.getServiceKey());
+			// TangYuanContainer.getInstance().addService(service);
+			// log.info("add <service> node: " + service.getServiceKey());
+
+			registerService(service, "service");
 		}
 	}
 
 	private AbstractServiceNode createService(Object instance, Method method, String ns) {
-		return new JavaServiceNode(method.getName(), ns, getFullId(ns, method.getName()), instance, method);
+		// return new JavaServiceNode(method.getName(), ns, getFullId(ns, method.getName()), instance, method);
+		return new JavaServiceNode(method.getName(), ns, TYUtils.getFullId(ns, method.getName()), instance, method);
 	}
 
 	// 取类的名称
@@ -162,28 +169,19 @@ public class XMLJavaNodeBuilder extends XmlNodeBuilder {
 		return false;
 	}
 
-	protected String getFullId(String ns, String id) {
-		if (null == ns || "".equals(ns)) {
-			return id;
-		}
-		return ns + "." + id;
-	}
-
 	@Override
 	public void setContext(XmlNodeWrapper root, XmlParseContext context) {
 		this.parseContext = context;
 		this.root = root;
 	}
 
-	public static void main(String[] args) {
-		// TODO
-		Class<?> clazz = ClassUtils.forName(XMLJavaNodeBuilder.class.getName());
-
-		Method[] methods = clazz.getMethods();
-
-		// ignos:some method
-		for (int i = 0; i < methods.length; i++) {
-			System.out.println(methods[i].getName());
-		}
-	}
+	// public static void main(String[] args) {
+	// // TODO
+	// Class<?> clazz = ClassUtils.forName(XMLJavaNodeBuilder.class.getName());
+	// Method[] methods = clazz.getMethods();
+	// // ignos:some method
+	// for (int i = 0; i < methods.length; i++) {
+	// System.out.println(methods[i].getName());
+	// }
+	// }
 }

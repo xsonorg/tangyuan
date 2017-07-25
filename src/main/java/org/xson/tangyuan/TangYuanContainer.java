@@ -1,6 +1,8 @@
 package org.xson.tangyuan;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -20,45 +22,46 @@ import org.xson.tangyuan.type.TypeHandlerRegistry;
 import org.xson.tangyuan.util.LicensesHelper;
 import org.xson.tangyuan.xml.XmlConfigurationBuilder;
 import org.xson.tangyuan.xml.XmlExtendBuilder;
+import org.xson.tangyuan.xml.XmlExtendCloseHook;
 import org.xson.tangyuan.xml.node.AbstractServiceNode;
 import org.xson.tangyuan.xml.node.AbstractServiceNode.TangYuanServiceType;
 
 public class TangYuanContainer {
 
-	private Log										log						= LogFactory.getLog(getClass());
+	private Log										log					= LogFactory.getLog(getClass());
 
-	private static TangYuanContainer				instance				= new TangYuanContainer();
+	private static TangYuanContainer				instance			= new TangYuanContainer();
 
-	private DataSourceManager						dataSourceManager		= null;
-	// private final Map<String, AbstractSqlNode> sqlServices = new HashMap<String, AbstractSqlNode>();
-	private final Map<String, AbstractServiceNode>	tangyuanServices		= new HashMap<String, AbstractServiceNode>();
+	private DataSourceManager						dataSourceManager	= null;
+	private final Map<String, AbstractServiceNode>	tangyuanServices	= new HashMap<String, AbstractServiceNode>();
 	private Map<String, ShardingDefVo>				shardingDefMap;
-	private Class<?>								defaultResultType		= XCO.class;
-	private int										defaultFetchSize		= 100;
-	private TypeHandlerRegistry						typeHandlerRegistry		= null;
-	private AsyncTaskThread							asyncTaskThread			= null;
-	private Map<String, CacheVo>					cacheVoMap				= null;
+	private Class<?>								defaultResultType	= XCO.class;
+	private int										defaultFetchSize	= 100;
+	private TypeHandlerRegistry						typeHandlerRegistry	= null;
+	private AsyncTaskThread							asyncTaskThread		= null;
+	private Map<String, CacheVo>					cacheVoMap			= null;
 
-	private Map<String, ServiceContextFactory>		scFactoryMap			= new HashMap<String, ServiceContextFactory>();
+	private Map<String, ServiceContextFactory>		scFactoryMap		= new HashMap<String, ServiceContextFactory>();
 
-	private int										sqlServiceErrorCode		= -1;											// 错误信息编码
-	private String									sqlServiceErrorMessage	= "服务异常";
+	// 错误信息编码
+	private int										errorCode			= -1;
+	private String									errorMessage		= "服务异常";
 
-	private boolean									licenses				= true;
+	private boolean									licenses			= false;
 
 	// 服务监控
-	private boolean									serviceMonitor			= false;
-	private SqlServiceMonitor						monitorThread			= null;
-	public long										monitorSleepTime		= 2000L;
-	public long										monitorIntervalTime		= 200L;
+	private boolean									serviceMonitor		= false;
+	private SqlServiceMonitor						monitorThread		= null;
+	public long										monitorSleepTime	= 2000L;
+	public long										monitorIntervalTime	= 200L;
 
-	// public org.xson.timer.client.TimerContainer timerClientContainer = null;
-	// public org.xson.timer.server.TimerContainer timerServerContainer = null;
+	public String									nsSeparator			= ".";
 
-	/**
-	 * 扩展插件解析器集合
-	 */
-	private Map<String, XmlExtendBuilder>			builderMap				= new HashMap<String, XmlExtendBuilder>();
+	/** 扩展插件解析器集合 */
+	private Map<String, XmlExtendBuilder>			builderMap			= new HashMap<String, XmlExtendBuilder>();
+
+	/** 扩展插件关闭器集合 */
+	private List<XmlExtendCloseHook>				closeHookList		= new ArrayList<XmlExtendCloseHook>();
 
 	private TangYuanContainer() {
 	}
@@ -123,8 +126,20 @@ public class TangYuanContainer {
 		asyncTaskThread.addTask(task);
 	}
 
-	public int getSqlServiceErrorCode() {
-		return sqlServiceErrorCode;
+	public void addCloseHook(XmlExtendCloseHook closeHook) {
+		this.closeHookList.add(closeHook);
+	}
+
+	public int getErrorCode() {
+		return errorCode;
+	}
+
+	public String getErrorMessage() {
+		return errorMessage;
+	}
+
+	public String getNsSeparator() {
+		return nsSeparator;
 	}
 
 	public boolean isServiceMonitor() {
@@ -135,16 +150,26 @@ public class TangYuanContainer {
 		return monitorThread;
 	}
 
-	public String getSqlServiceErrorMessage() {
-		return sqlServiceErrorMessage;
-	}
-
 	public boolean hasLicenses() {
 		return licenses;
 	}
 
 	public Map<String, XmlExtendBuilder> getBuilderMap() {
 		return builderMap;
+	}
+
+	/** 设置配置文件 */
+	public void config(Map<String, String> properties) {
+		if (properties.containsKey("errorCode".toUpperCase())) {
+			errorCode = Integer.parseInt(properties.get("errorCode".toUpperCase()));
+		}
+		if (properties.containsKey("errorMessage".toUpperCase())) {
+			errorMessage = properties.get("errorMessage".toUpperCase());
+		}
+		if (properties.containsKey("nsSeparator".toUpperCase())) {
+			nsSeparator = properties.get("nsSeparator".toUpperCase());
+		}
+		log.info("config setting success...");
 	}
 
 	public void start(String resource) throws Throwable {
@@ -180,10 +205,16 @@ public class TangYuanContainer {
 	}
 
 	public void stop() throws Throwable {
+
+		// TODO 所有的stop都不能抛异常
+		// TODO 需要等待所有服务都执行完毕
+
 		asyncTaskThread.stop();
+
 		if (null != monitorThread) {
 			monitorThread.stop();
 		}
+
 		if (null != this.cacheVoMap) {
 			for (Entry<String, CacheVo> entry : this.cacheVoMap.entrySet()) {
 				CacheVo cacheVo = entry.getValue();
@@ -195,6 +226,15 @@ public class TangYuanContainer {
 
 		org.xson.timer.client.TimerContainer.getInstance().stop();
 		org.xson.timer.server.TimerContainer.getInstance().stop();
+
+		for (XmlExtendCloseHook closeHook : closeHookList) {
+			closeHook.close();
+		}
+
+		if (null != dataSourceManager) {
+			dataSourceManager.close();
+		}
+
 	}
 
 	// private MongoDataSource mongoDataSource = null;
@@ -211,5 +251,15 @@ public class TangYuanContainer {
 	// public MongoActuator getMongoActuator() {
 	// return mongoActuator;
 	// }
-
+	// public int getSqlServiceErrorCode() {
+	// return sqlServiceErrorCode;
+	// }
+	// public String getSqlServiceErrorMessage() {
+	// return sqlServiceErrorMessage;
+	// }
+	// private int sqlServiceErrorCode = -1; // 错误信息编码
+	// private String sqlServiceErrorMessage = "服务异常";
+	// private final Map<String, AbstractSqlNode> sqlServices = new HashMap<String, AbstractSqlNode>();
+	// public org.xson.timer.client.TimerContainer timerClientContainer = null;
+	// public org.xson.timer.server.TimerContainer timerServerContainer = null;
 }

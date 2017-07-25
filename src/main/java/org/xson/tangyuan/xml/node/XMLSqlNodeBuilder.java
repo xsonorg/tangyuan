@@ -42,6 +42,11 @@ public class XMLSqlNodeBuilder extends XmlNodeBuilder {
 	private Class<?>		serviceResultType	= null;
 
 	@Override
+	public Log getLog() {
+		return this.log;
+	}
+
+	@Override
 	public void parseRef() {
 		buildRefNode(this.root.evalNodes("sql"));
 	}
@@ -70,24 +75,24 @@ public class XMLSqlNodeBuilder extends XmlNodeBuilder {
 		this.ns = this.root.getStringAttribute("ns", "");
 	}
 
-	private void registerService(List<AbstractSqlNode> list, String nodeName) {
-		for (AbstractSqlNode node : list) {
-			// TangYuanContainer.getInstance().addSqlService(node);
-			TangYuanContainer.getInstance().addService(node);
-			log.info("add <" + nodeName + "> node: " + node.getServiceKey());
-		}
-		// boolean result = TangYuanContainer.getInstance().hasLicenses();
-		// for (AbstractSqlNode node : list) {
-		// if (result) {
-		// TangYuanContainer.getInstance().addSqlService(node);
-		// } else {
-		// if (NumberUtils.randomSuccess()) {
-		// TangYuanContainer.getInstance().addSqlService(node);
-		// }
-		// }
-		// log.info("add <" + nodeName + "> node: " + node.getServiceKey());
-		// }
-	}
+	// private void registerService1(List<AbstractSqlNode> list, String nodeName) {
+	// for (AbstractSqlNode node : list) {
+	// // TangYuanContainer.getInstance().addSqlService(node);
+	// TangYuanContainer.getInstance().addService(node);
+	// log.info("add <" + nodeName + "> node: " + node.getServiceKey());
+	// }
+	// // boolean result = TangYuanContainer.getInstance().hasLicenses();
+	// // for (AbstractSqlNode node : list) {
+	// // if (result) {
+	// // TangYuanContainer.getInstance().addSqlService(node);
+	// // } else {
+	// // if (NumberUtils.randomSuccess()) {
+	// // TangYuanContainer.getInstance().addSqlService(node);
+	// // }
+	// // }
+	// // log.info("add <" + nodeName + "> node: " + node.getServiceKey());
+	// // }
+	// }
 
 	private void existingService(String id) {
 		String fullId = getFullId(id);
@@ -195,15 +200,15 @@ public class XMLSqlNodeBuilder extends XmlNodeBuilder {
 	private void configurationElement(XmlNodeWrapper context) {
 		try {
 
-			List<AbstractSqlNode> selectSetList = buildSelectSetNodes(context.evalNodes("selectSet"));
-			List<AbstractSqlNode> selectOneList = buildSelectOneNodes(context.evalNodes("selectOne"));
-			List<AbstractSqlNode> selectVarList = buildSelectVarNodes(context.evalNodes("selectVar"));
-			List<AbstractSqlNode> insertList = buildInsertNodes(context.evalNodes("insert"));
-			List<AbstractSqlNode> updateList = buildUpdateNodes(context.evalNodes("update"));
-			List<AbstractSqlNode> deleteList = buildDeleteNodes(context.evalNodes("delete"));
+			List<AbstractServiceNode> selectSetList = buildSelectSetNodes(context.evalNodes("selectSet"));
+			List<AbstractServiceNode> selectOneList = buildSelectOneNodes(context.evalNodes("selectOne"));
+			List<AbstractServiceNode> selectVarList = buildSelectVarNodes(context.evalNodes("selectVar"));
+			List<AbstractServiceNode> insertList = buildInsertNodes(context.evalNodes("insert"));
+			List<AbstractServiceNode> updateList = buildUpdateNodes(context.evalNodes("update"));
+			List<AbstractServiceNode> deleteList = buildDeleteNodes(context.evalNodes("delete"));
 			// List<AbstractSqlNode> procedureList =
 			// buildProcedureNodes(context.evalNodes("procedure"));
-			List<AbstractSqlNode> sqlServiceList = buildSqlServiceNodes(context.evalNodes("sql-service"));
+			List<AbstractServiceNode> sqlServiceList = buildSqlServiceNodes(context.evalNodes("sql-service"));
 
 			registerService(selectSetList, "selectSet");
 			registerService(selectOneList, "selectOne");
@@ -331,8 +336,8 @@ public class XMLSqlNodeBuilder extends XmlNodeBuilder {
 		return new SelectResult(resultType, resultMap);
 	}
 
-	private List<AbstractSqlNode> buildSelectSetNodes(List<XmlNodeWrapper> contexts) {
-		List<AbstractSqlNode> list = new ArrayList<AbstractSqlNode>();
+	private List<AbstractServiceNode> buildSelectSetNodes(List<XmlNodeWrapper> contexts) {
+		List<AbstractServiceNode> list = new ArrayList<AbstractServiceNode>();
 		for (XmlNodeWrapper context : contexts) {
 			TangYuanNode sqlNode = parseNode(context, false);
 			if (null != sqlNode) {
@@ -385,8 +390,8 @@ public class XMLSqlNodeBuilder extends XmlNodeBuilder {
 		return list;
 	}
 
-	private List<AbstractSqlNode> buildSelectOneNodes(List<XmlNodeWrapper> contexts) {
-		List<AbstractSqlNode> list = new ArrayList<AbstractSqlNode>();
+	private List<AbstractServiceNode> buildSelectOneNodes(List<XmlNodeWrapper> contexts) {
+		List<AbstractServiceNode> list = new ArrayList<AbstractServiceNode>();
 		for (XmlNodeWrapper context : contexts) {
 			TangYuanNode sqlNode = parseNode(context, false);
 			if (null != sqlNode) {
@@ -430,8 +435,8 @@ public class XMLSqlNodeBuilder extends XmlNodeBuilder {
 		return list;
 	}
 
-	private List<AbstractSqlNode> buildSelectVarNodes(List<XmlNodeWrapper> contexts) {
-		List<AbstractSqlNode> list = new ArrayList<AbstractSqlNode>();
+	private List<AbstractServiceNode> buildSelectVarNodes(List<XmlNodeWrapper> contexts) {
+		List<AbstractServiceNode> list = new ArrayList<AbstractServiceNode>();
 		for (XmlNodeWrapper context : contexts) {
 			TangYuanNode sqlNode = parseNode(context, false);
 			if (null != sqlNode) {
@@ -470,8 +475,8 @@ public class XMLSqlNodeBuilder extends XmlNodeBuilder {
 		return list;
 	}
 
-	private List<AbstractSqlNode> buildInsertNodes(List<XmlNodeWrapper> contexts) {
-		List<AbstractSqlNode> list = new ArrayList<AbstractSqlNode>();
+	private List<AbstractServiceNode> buildInsertNodes(List<XmlNodeWrapper> contexts) {
+		List<AbstractServiceNode> list = new ArrayList<AbstractServiceNode>();
 		for (XmlNodeWrapper context : contexts) {
 			TangYuanNode sqlNode = parseNode(context, false);
 			if (null != sqlNode) {
@@ -516,8 +521,8 @@ public class XMLSqlNodeBuilder extends XmlNodeBuilder {
 		return list;
 	}
 
-	private List<AbstractSqlNode> buildUpdateNodes(List<XmlNodeWrapper> contexts) {
-		List<AbstractSqlNode> list = new ArrayList<AbstractSqlNode>();
+	private List<AbstractServiceNode> buildUpdateNodes(List<XmlNodeWrapper> contexts) {
+		List<AbstractServiceNode> list = new ArrayList<AbstractServiceNode>();
 		for (XmlNodeWrapper context : contexts) {
 			TangYuanNode sqlNode = parseNode(context, false);
 			if (null != sqlNode) {
@@ -556,8 +561,8 @@ public class XMLSqlNodeBuilder extends XmlNodeBuilder {
 		return list;
 	}
 
-	private List<AbstractSqlNode> buildDeleteNodes(List<XmlNodeWrapper> contexts) {
-		List<AbstractSqlNode> list = new ArrayList<AbstractSqlNode>();
+	private List<AbstractServiceNode> buildDeleteNodes(List<XmlNodeWrapper> contexts) {
+		List<AbstractServiceNode> list = new ArrayList<AbstractServiceNode>();
 		for (XmlNodeWrapper context : contexts) {
 			TangYuanNode sqlNode = parseNode(context, false);
 			if (null != sqlNode) {
@@ -596,8 +601,8 @@ public class XMLSqlNodeBuilder extends XmlNodeBuilder {
 		return list;
 	}
 
-	private List<AbstractSqlNode> buildSqlServiceNodes(List<XmlNodeWrapper> contexts) {
-		List<AbstractSqlNode> list = new ArrayList<AbstractSqlNode>();
+	private List<AbstractServiceNode> buildSqlServiceNodes(List<XmlNodeWrapper> contexts) {
+		List<AbstractServiceNode> list = new ArrayList<AbstractServiceNode>();
 		for (XmlNodeWrapper context : contexts) {
 			String id = StringUtils.trim(context.getStringAttribute("id")); // xml
 																			// validation
@@ -890,14 +895,22 @@ public class XMLSqlNodeBuilder extends XmlNodeBuilder {
 
 	private class CallHandler implements NodeHandler {
 		public void handleNode(XmlNodeWrapper nodeToHandle, List<TangYuanNode> targetContents) {
-			String service = StringUtils.trim(nodeToHandle.getStringAttribute("service"));
-			if (null == service) {
-				throw new XmlParseException("call节点中service属性不能为空");
+			String serviceId = StringUtils.trim(nodeToHandle.getStringAttribute("service"));
+			if (null == serviceId) {
+				throw new XmlParseException("The service attribute in the call node can not be empty");
 			}
+
+			// fix: 新增变量调用功能
+			Object service = serviceId;
+			if (checkVar(serviceId)) {
+				service = new NormalParser().parse(serviceId);
+			}
+
 			String resultKey = getResultKey(StringUtils.trim(nodeToHandle.getStringAttribute("resultKey")));
-			String _mode = StringUtils.trim(nodeToHandle.getStringAttribute("mode"));// xml
-																						// validation
-			CallMode mode = CallMode.EXTEND;
+			String _mode = StringUtils.trim(nodeToHandle.getStringAttribute("mode"));// xml v
+
+			// CallMode mode = CallMode.EXTEND;
+			CallMode mode = null;// 增加新的默认模式
 			if (null != _mode) {
 				mode = getCallMode(_mode);
 			}
@@ -911,12 +924,13 @@ public class XMLSqlNodeBuilder extends XmlNodeBuilder {
 					String name = StringUtils.trim(propertyNode.getStringAttribute("name"));
 					String value = StringUtils.trim(propertyNode.getStringAttribute("value"));
 					if (!checkVar(value)) {
-						throw new XmlParseException("Call property value 不合法, 应是{xxx}");
+						throw new XmlParseException("Illegal call property value, should be {xxx}");
 					}
+					// TODO 考虑支持常量
 					value = getRealVal(value);
 					if (null != name) {
 						if (!checkVar(name)) {
-							throw new XmlParseException("Call property name 不合法, 应是{xxx}");
+							throw new XmlParseException("Illegal call property name, should be {xxx}");
 						}
 						name = getRealVal(name);
 					} else {
@@ -927,7 +941,7 @@ public class XMLSqlNodeBuilder extends XmlNodeBuilder {
 				}
 			}
 
-			// TODO:后面还需要做一个检测,是否有ID
+			// service id可以放在运行期间检查
 			targetContents.add(new CallNode(service, resultKey, mode, itemList, exResultKey));
 		}
 	}

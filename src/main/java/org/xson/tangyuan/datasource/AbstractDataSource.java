@@ -35,7 +35,7 @@ public abstract class AbstractDataSource {
 		return realDataSourceId;
 	}
 
-	abstract public Connection getConnection() throws SQLException;
+	abstract public Connection getConnection(String dsKey) throws SQLException;
 
 	abstract public void recycleConnection(Connection connection) throws SQLException;
 

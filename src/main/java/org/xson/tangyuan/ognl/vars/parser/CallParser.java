@@ -1,8 +1,13 @@
 package org.xson.tangyuan.ognl.vars.parser;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+
 import org.xson.tangyuan.ognl.OgnlException;
+import org.xson.tangyuan.ognl.vars.ArgSelfVo;
 import org.xson.tangyuan.ognl.vars.Variable;
 import org.xson.tangyuan.ognl.vars.vo.CallVariable;
+import org.xson.tangyuan.util.ClassUtils;
 
 public class CallParser extends AbstractParser {
 
@@ -21,10 +26,20 @@ public class CallParser extends AbstractParser {
 			return Boolean.valueOf(text);
 		}
 		// 仅仅支持:数值类型, 字符串类型
+		// if (isStaticString(text)) { // 字符串
+		// return text.substring(1, text.length() - 1);
+		// } else if (isNumber(text)) { // 数值
+		// return getNumber(text);
+		// } else {// 变量
+		// return new NormalParser().parse(text);
+		// }
+
 		if (isStaticString(text)) { // 字符串
 			return text.substring(1, text.length() - 1);
 		} else if (isNumber(text)) { // 数值
 			return getNumber(text);
+		} else if (ArgSelfVo.AEG_SELF_MARK.equalsIgnoreCase(text)) { // 特殊参数
+			return ArgSelfVo.argSelf;
 		} else {// 变量
 			return new NormalParser().parse(text);
 		}
@@ -43,7 +58,8 @@ public class CallParser extends AbstractParser {
 		}
 
 		// TODO: 要区分Java, JS
-		String method = text.substring(1, left).trim();
+		// 仅考虑支持JAVA静态方法
+		String methodName = text.substring(1, left).trim();
 		String argString = text.substring(left + 1, right).trim();
 
 		Object[] vars = null;
@@ -54,7 +70,32 @@ public class CallParser extends AbstractParser {
 				vars[i] = getVal(array[i].trim());
 			}
 		}
+
+		Method method = getStaticMethod(methodName);
 		return new CallVariable(text, method, vars);
+	}
+
+	private Method getStaticMethod(String fullName) {
+		int lastpos = fullName.lastIndexOf(".");
+		if (lastpos < 0) {
+			throw new OgnlException("Illegal method call name: " + fullName);
+		}
+
+		String className = fullName.substring(0, lastpos);
+		String methodName = fullName.substring(lastpos + 1);
+		Class<?> clazz = ClassUtils.forName(className);
+
+		Method[] methods = clazz.getMethods();
+		for (Method m : methods) {
+			if (m.getName().equals(methodName)) {
+				if (!Modifier.isStatic(m.getModifiers())) {
+					throw new OgnlException("The method invoked in XML must be static: " + fullName);
+				}
+				return m;
+			}
+		}
+
+		throw new OgnlException("Non-existent method call name: " + fullName);
 	}
 
 	public static void main(String[] args) {

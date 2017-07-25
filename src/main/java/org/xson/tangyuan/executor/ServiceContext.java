@@ -13,6 +13,7 @@ public class ServiceContext {
 	private SqlServiceContext		sqlServiceContext	= null;
 	private IServiceContext			mongoServiceContext	= null;
 	private IServiceContext			javaServiceContext	= null;
+	private IServiceContext			mqServiceContext	= null;
 
 	// private IServiceContext hiveServiceContext = null;
 	// private IServiceContext hbaseServiceContext = null;
@@ -97,7 +98,6 @@ public class ServiceContext {
 			return mongoServiceContext;
 		} else if (TangYuanServiceType.JAVA == type) {
 			if (null == javaServiceContext) {
-				// javaServiceContext = TangYuanContainer.getInstance().getContextFactory(type).create();
 				javaServiceContext = new JavaServiceContext();
 			}
 			return javaServiceContext;
@@ -113,6 +113,13 @@ public class ServiceContext {
 		// }
 		// return hbaseServiceContext;
 		// }
+		else if (TangYuanServiceType.MQ == type) {
+			if (null == mqServiceContext) {
+				mqServiceContext = TangYuanContainer.getInstance().getContextFactory(type).create();
+			}
+			return mqServiceContext;
+		}
+
 		return getSqlServiceContext();
 	}
 
@@ -137,6 +144,11 @@ public class ServiceContext {
 		// hbaseServiceContext.commit(true);
 		// hbaseServiceContext = null;
 		// }
+
+		if (null != mqServiceContext) {
+			mqServiceContext.commit(true);
+			mqServiceContext = null;
+		}
 	}
 
 	public void finishOnException() {
@@ -144,10 +156,12 @@ public class ServiceContext {
 			sqlServiceContext.rollback();
 			sqlServiceContext = null;
 		}
+
 		if (null != mongoServiceContext) {
 			mongoServiceContext.rollback();
 			mongoServiceContext = null;
 		}
+
 		if (null != javaServiceContext) {
 			javaServiceContext.rollback();
 			javaServiceContext = null;
@@ -160,6 +174,12 @@ public class ServiceContext {
 		// hbaseServiceContext.rollback();
 		// hbaseServiceContext = null;
 		// }
+
+		if (null != mqServiceContext) {
+			mqServiceContext.rollback();
+			mqServiceContext = null;
+		}
+
 		this.exceptionInfo = null;
 	}
 

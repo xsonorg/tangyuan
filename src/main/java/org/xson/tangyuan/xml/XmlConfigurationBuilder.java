@@ -29,7 +29,6 @@ import org.xson.tangyuan.type.TypeHandlerRegistry;
 import org.xson.tangyuan.util.ClassUtils;
 import org.xson.tangyuan.util.Resources;
 import org.xson.tangyuan.util.StringUtils;
-import org.xson.tangyuan.xml.node.TangYuanNode;
 import org.xson.tangyuan.xml.node.XMLJavaNodeBuilder;
 import org.xson.tangyuan.xml.node.XMLSqlNodeBuilder;
 
@@ -50,8 +49,6 @@ public class XmlConfigurationBuilder {
 	private Map<String, ICache>			cacheHandlerMap			= new HashMap<String, ICache>();
 	private Map<String, CacheVo>		cacheVoMap				= new HashMap<String, CacheVo>();
 
-	// private boolean licenses = true;
-
 	/** 解析内容上下文 */
 	private XmlParseContext				context					= new XmlParseContext();
 
@@ -67,7 +64,7 @@ public class XmlConfigurationBuilder {
 
 	private void configurationElement(XmlNodeWrapper context) {
 		try {
-			// 先解析默认设置
+			buildConfigNodes(context.evalNodes("config-property"));// 解析配置项目
 			List<DataSourceVo> dsList = buildDataSourceNodes(context.evalNodes("dataSource"));// 解析dataSource
 			List<DataSourceVo> dsGroupList = buildDataSourceGroupNodes(context.evalNodes("dataSourceGroup"));// 解析dataSourceGroup
 			addDataSource(dsList, dsGroupList);
@@ -89,13 +86,38 @@ public class XmlConfigurationBuilder {
 
 			// 扩展插件
 			buildMongoExtendNodes(context.evalNodes("mongo-extend"));
+			buildMqExtendNodes(context.evalNodes("mq-extend"));// 这个需要放在扩展服务的最后,因为有监听
+
+			// 切面
+			buildAspectNodes(context.evalNodes("aspect"));
+
+			// 定时器插件
 			buildTimerServerExtendNodes(context.evalNodes("timer-server-extend"));
 			buildTimerClientExtendNodes(context.evalNodes("timer-client-extend"));
 
+			// 后置方法 TODO
+
 			// clean
 			this.context.clean();
+
 		} catch (Throwable e) {
 			throw new XmlParseException(e);
+		}
+	}
+
+	private void buildConfigNodes(List<XmlNodeWrapper> contexts) throws Exception {
+		// <config-property name="A" value="B" />
+		Map<String, String> configMap = new HashMap<String, String>();
+		for (XmlNodeWrapper context : contexts) {
+			String name = StringUtils.trim(context.getStringAttribute("name"));
+			String value = StringUtils.trim(context.getStringAttribute("value"));
+			if (null == name || null == value) {
+				throw new XmlParseException("<config-property> missing name or value");
+			}
+			configMap.put(name.toUpperCase(), value);
+		}
+		if (configMap.size() > 0) {
+			TangYuanContainer.getInstance().config(configMap);
 		}
 	}
 
@@ -365,6 +387,54 @@ public class XmlConfigurationBuilder {
 		return dsList;
 	}
 
+	// private void addDataSource(List<DataSourceVo> dsList, List<DataSourceVo> dsGroupList) throws Exception {
+	// List<DataSourceVo> allList = new ArrayList<DataSourceVo>();
+	// if (null != dsList && dsList.size() > 0) {
+	// allList.addAll(dsList);
+	// }
+	// if (null != dsGroupList && dsGroupList.size() > 0) {
+	// allList.addAll(dsGroupList);
+	// }
+	// if (0 == allList.size()) {
+	// throw new XmlParseException("没有数据源");
+	// }
+	//
+	// Map<String, String> decryptProperties = null;
+	// DataSourceManager dataSourceManager = null;
+	// // 简单唯一数据源
+	// if (1 == allList.size() && !allList.get(0).isGroup()) {
+	// DataSourceVo dsVo = allList.get(0);
+	// AbstractDataSource dataSource = new DataSourceCreater().create(dsVo, decryptProperties);
+	// dataSourceManager = new SimpleDataSourceManager(dataSource, dsVo.getId());
+	// log.info("add datasource: " + dsVo.getId());
+	// } else {
+	// Map<String, DataSourceVo> logicDataSourceMap = new HashMap<String, DataSourceVo>();
+	// Map<String, AbstractDataSource> realDataSourceMap = new HashMap<String, AbstractDataSource>();
+	// String _defaultDsKey = null;
+	// for (DataSourceVo dsVo : allList) {
+	// if (dsVo.isGroup()) {
+	// new DataSourceCreater().create((DataSourceGroupVo) dsVo, realDataSourceMap, decryptProperties);
+	// } else {
+	// AbstractDataSource dataSource = new DataSourceCreater().create(dsVo, decryptProperties);
+	// if (realDataSourceMap.containsKey(dataSource.getRealDataSourceId())) {
+	// throw new DataSourceException("Duplicate DataSource ID: " + dataSource.getRealDataSourceId());
+	// }
+	// realDataSourceMap.put(dataSource.getRealDataSourceId(), dataSource);
+	// }
+	// if (logicDataSourceMap.containsKey(dsVo.getId())) {
+	// throw new DataSourceException("Duplicate DataSource ID: " + dsVo.getId());
+	// }
+	// logicDataSourceMap.put(dsVo.getId(), dsVo);
+	// if (dsVo.isDefaultDs()) {
+	// _defaultDsKey = dsVo.getId();
+	// }
+	// log.info("add datasource: " + dsVo.getId());
+	// }
+	// dataSourceManager = new MuiltDataSourceManager(logicDataSourceMap, realDataSourceMap, _defaultDsKey);
+	// }
+	// TangYuanContainer.getInstance().setDataSourceManager(dataSourceManager);
+	// }
+
 	private void addDataSource(List<DataSourceVo> dsList, List<DataSourceVo> dsGroupList) throws Exception {
 		List<DataSourceVo> allList = new ArrayList<DataSourceVo>();
 		if (null != dsList && dsList.size() > 0) {
@@ -374,40 +444,40 @@ public class XmlConfigurationBuilder {
 			allList.addAll(dsGroupList);
 		}
 		if (0 == allList.size()) {
-			throw new XmlParseException("没有数据源");
+			throw new XmlParseException("No data source...");
 		}
 
 		Map<String, String> decryptProperties = null;
 		DataSourceManager dataSourceManager = null;
-		// 简单唯一数据源
-		if (1 == allList.size() && !allList.get(0).isGroup()) {
-			DataSourceVo dsVo = allList.get(0);
-			AbstractDataSource dataSource = new DataSourceCreater().create(dsVo, decryptProperties);
-			dataSourceManager = new SimpleDataSourceManager(dataSource, dsVo.getId());
-			log.info("add datasource: " + dsVo.getId());
-		} else {
-			Map<String, DataSourceVo> logicDataSourceMap = new HashMap<String, DataSourceVo>();
-			Map<String, AbstractDataSource> realDataSourceMap = new HashMap<String, AbstractDataSource>();
-			String _defaultDsKey = null;
-			for (DataSourceVo dsVo : allList) {
-				if (dsVo.isGroup()) {
-					new DataSourceCreater().create((DataSourceGroupVo) dsVo, realDataSourceMap, decryptProperties);
-				} else {
-					AbstractDataSource dataSource = new DataSourceCreater().create(dsVo, decryptProperties);
-					if (realDataSourceMap.containsKey(dataSource.getRealDataSourceId())) {
-						throw new DataSourceException("重复的DataSourceID:" + dataSource.getRealDataSourceId());
-					}
-					realDataSourceMap.put(dataSource.getRealDataSourceId(), dataSource);
-				}
-				if (logicDataSourceMap.containsKey(dsVo.getId())) {
-					throw new DataSourceException("重复的DataSourceID:" + dsVo.getId());
-				}
-				logicDataSourceMap.put(dsVo.getId(), dsVo);
-				if (dsVo.isDefaultDs()) {
-					_defaultDsKey = dsVo.getId();
-				}
-				log.info("add datasource: " + dsVo.getId());
+
+		Map<String, DataSourceVo> logicDataSourceMap = new HashMap<String, DataSourceVo>();
+		Map<String, AbstractDataSource> realDataSourceMap = new HashMap<String, AbstractDataSource>();
+
+		String _defaultDsKey = null;
+
+		for (DataSourceVo dsVo : allList) {
+			if (logicDataSourceMap.containsKey(dsVo.getId())) {
+				throw new DataSourceException("Duplicate DataSource ID: " + dsVo.getId());
 			}
+			// process real
+			if (dsVo.isGroup()) {
+				new DataSourceCreater().createDataSourceGroup((DataSourceGroupVo) dsVo, realDataSourceMap, decryptProperties);
+			} else {
+				new DataSourceCreater().createDataSource(dsVo, realDataSourceMap, decryptProperties);
+			}
+			logicDataSourceMap.put(dsVo.getId(), dsVo);
+			if (dsVo.isDefaultDs()) {
+				_defaultDsKey = dsVo.getId();
+			}
+			log.info("add datasource: " + dsVo.getId());
+		}
+
+		// 再次判断
+		if (logicDataSourceMap.size() == 1 && realDataSourceMap.size() == 1) {
+			_defaultDsKey = allList.get(0).getId();
+			AbstractDataSource onoDs = realDataSourceMap.get(_defaultDsKey);
+			dataSourceManager = new SimpleDataSourceManager(onoDs, _defaultDsKey);
+		} else {
 			dataSourceManager = new MuiltDataSourceManager(logicDataSourceMap, realDataSourceMap, _defaultDsKey);
 		}
 		TangYuanContainer.getInstance().setDataSourceManager(dataSourceManager);
@@ -501,8 +571,7 @@ public class XmlConfigurationBuilder {
 			throw new XmlParseException("sharding只能有一项");
 		}
 		XmlNodeWrapper xNode = contexts.get(0);
-		String resource = StringUtils.trim(xNode.getStringAttribute("resource")); // xml
-																					// v
+		String resource = StringUtils.trim(xNode.getStringAttribute("resource")); // xml v
 		log.info("Start parsing: " + resource);
 		InputStream inputStream = Resources.getResourceAsStream(resource);
 		XmlShardingBuilder xmlShardingBuilder = new XmlShardingBuilder(inputStream, dataSourceVoMap);
@@ -518,18 +587,17 @@ public class XmlConfigurationBuilder {
 		List<XmlNodeBuilder> xmlNodeBuilderList = new ArrayList<XmlNodeBuilder>();
 
 		// 防止重复, 全局控制
-		Map<String, TangYuanNode> integralRefMap = new HashMap<String, TangYuanNode>();
-		Map<String, Integer> integralServiceMap = new HashMap<String, Integer>();
-
-		context.setIntegralRefMap(integralRefMap);
-		context.setIntegralServiceMap(integralServiceMap);
+//		Map<String, TangYuanNode> integralRefMap = new HashMap<String, TangYuanNode>();
+//		Map<String, Integer> integralServiceMap = new HashMap<String, Integer>();
+//		context.setIntegralRefMap(integralRefMap);
+//		context.setIntegralServiceMap(integralServiceMap);
 
 		// 扫描所有的<SQL>
 		for (int i = 0; i < size; i++) {
 			XmlNodeWrapper xNode = contexts.get(i);
 			String resource = StringUtils.trim(xNode.getStringAttribute("resource")); // xml
 																						// v
-			log.info("Start parsing: " + resource);
+			log.info("Start parsing(1): " + resource);
 			InputStream inputStream = Resources.getResourceAsStream(resource);
 			// XMLSqlNodeBuilder xmlSqlNodeBuilder = new XMLSqlNodeBuilder(inputStream, this, xmlMapperBuilder, integralRefMap, integralServiceMap);
 
@@ -543,7 +611,7 @@ public class XmlConfigurationBuilder {
 
 		// 注册所有的服务
 		for (int i = 0; i < size; i++) {
-			log.info("Start parsing: " + resourceList.get(i));
+			log.info("Start parsing(2): " + resourceList.get(i));
 			xmlNodeBuilderList.get(i).parseService();
 		}
 	}
@@ -583,7 +651,32 @@ public class XmlConfigurationBuilder {
 			throw new XmlParseException("Missing mongo extension plugin builder");
 		}
 
-		extendBuilder.parse(this, resource);
+		// extendBuilder.parse(this, resource);
+		XmlExtendCloseHook closeHook = extendBuilder.parse(this, resource);
+		TangYuanContainer.getInstance().addCloseHook(closeHook);
+	}
+
+	private void buildMqExtendNodes(List<XmlNodeWrapper> contexts) throws Throwable {
+		if (contexts.size() == 0) {
+			return;
+		}
+		if (contexts.size() > 1) {
+			throw new XmlParseException("Only one mq plugin is allowed");
+		}
+
+		XmlNodeWrapper xNode = contexts.get(0);
+		String resource = StringUtils.trim(xNode.getStringAttribute("resource"));
+
+		// 调用静态代码库
+		Class.forName("org.xson.tangyuan.TangYuanMqContainer");
+
+		XmlExtendBuilder extendBuilder = TangYuanContainer.getInstance().getBuilderMap().get("mq");
+		if (null == extendBuilder) {
+			throw new XmlParseException("Missing mq extension plugin builder");
+		}
+
+		XmlExtendCloseHook closeHook = extendBuilder.parse(this, resource);
+		TangYuanContainer.getInstance().addCloseHook(closeHook);
 	}
 
 	private void buildTimerClientExtendNodes(List<XmlNodeWrapper> contexts) throws Throwable {
@@ -614,6 +707,25 @@ public class XmlConfigurationBuilder {
 
 		org.xson.timer.server.TimerContainer.getInstance().start(resource);
 		log.info("timer server start successful...");
+	}
+
+	private void buildAspectNodes(List<XmlNodeWrapper> contexts) throws Throwable {
+		if (contexts.size() == 0) {
+			return;
+		}
+		if (contexts.size() > 1) {
+			throw new XmlParseException("Only one aspect plugin is allowed");
+		}
+
+		XmlNodeWrapper xNode = contexts.get(0);
+		String resource = StringUtils.trim(xNode.getStringAttribute("resource"));
+
+		log.info("Start parsing: " + resource);
+		InputStream inputStream = Resources.getResourceAsStream(resource);
+		XmlAspectBuilder xmlAspectBuilder = new XmlAspectBuilder(inputStream);
+		xmlAspectBuilder.parse();
+
+		log.info("aspect plugin successful...");
 	}
 
 	private ConnPoolType getConnPoolType(String type) {
@@ -693,6 +805,10 @@ public class XmlConfigurationBuilder {
 
 	public CacheVo getDefaultCacheVo() {
 		return defaultCacheVo;
+	}
+	
+	public XmlParseContext getContext() {
+		return context;
 	}
 
 }

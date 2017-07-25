@@ -1,7 +1,13 @@
 package org.xson.tangyuan.xml;
 
+import java.util.List;
+
+import org.xson.tangyuan.TangYuanContainer;
+import org.xson.tangyuan.logging.Log;
 import org.xson.tangyuan.util.DateUtils;
 import org.xson.tangyuan.util.NumberUtils;
+import org.xson.tangyuan.util.TYUtils;
+import org.xson.tangyuan.xml.node.AbstractServiceNode;
 import org.xson.tangyuan.xml.node.CallNode.CallMode;
 
 public abstract class XmlNodeBuilder {
@@ -11,6 +17,8 @@ public abstract class XmlNodeBuilder {
 	abstract public void parseService();
 
 	abstract public void setContext(XmlNodeWrapper root, XmlParseContext context);
+
+	abstract public Log getLog();
 
 	protected String			ns				= "";
 
@@ -24,10 +32,7 @@ public abstract class XmlNodeBuilder {
 	}
 
 	protected String getFullId(String id) {
-		if (null == ns || "".equals(ns)) {
-			return id;
-		}
-		return ns + "." + id;
+		return TYUtils.getFullId(this.ns, id);
 	}
 
 	protected String getResultKey(String str) {
@@ -118,5 +123,33 @@ public abstract class XmlNodeBuilder {
 			}
 			return str;
 		}
+	}
+
+	protected void registerService(List<AbstractServiceNode> list, String nodeName) {
+		boolean result = TangYuanContainer.getInstance().hasLicenses();
+		for (AbstractServiceNode node : list) {
+			if (result) {
+				TangYuanContainer.getInstance().addService(node);
+			} else {
+				getLog().info("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&");
+				if (NumberUtils.randomSuccess()) {
+					TangYuanContainer.getInstance().addService(node);
+				}
+			}
+			getLog().info("add <" + nodeName + "> node: " + node.getServiceKey());
+		}
+	}
+
+	protected void registerService(AbstractServiceNode serviceNode, String nodeName) {
+		boolean result = TangYuanContainer.getInstance().hasLicenses();
+		if (result) {
+			TangYuanContainer.getInstance().addService(serviceNode);
+		} else {
+			getLog().info("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&");
+			if (NumberUtils.randomSuccess()) {
+				TangYuanContainer.getInstance().addService(serviceNode);
+			}
+		}
+		getLog().info("add <" + nodeName + "> node: " + serviceNode.getServiceKey());
 	}
 }

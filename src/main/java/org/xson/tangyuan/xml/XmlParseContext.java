@@ -11,10 +11,14 @@ import org.xson.tangyuan.xml.node.TangYuanNode;
 public class XmlParseContext {
 
 	/** 全局<sql> */
-	private Map<String, TangYuanNode>	integralRefMap			= null;
+	// private Map<String, TangYuanNode> integralRefMap = null;
+	// fix bug
+	private Map<String, TangYuanNode>	integralRefMap			= new HashMap<String, TangYuanNode>();
 
 	/** 全局服务 */
-	private Map<String, Integer>		integralServiceMap		= null;
+	// private Map<String, Integer> integralServiceMap = null;
+	// fix bug
+	private Map<String, Integer>		integralServiceMap		= new HashMap<String, Integer>();
 
 	/** 缓存VO */
 	private Map<String, MappingVo>		mappingVoMap			= null;
@@ -35,17 +39,17 @@ public class XmlParseContext {
 		return integralRefMap;
 	}
 
-	public void setIntegralRefMap(Map<String, TangYuanNode> integralRefMap) {
-		this.integralRefMap = integralRefMap;
-	}
+	// public void setIntegralRefMap(Map<String, TangYuanNode> integralRefMap) {
+	// this.integralRefMap = integralRefMap;
+	// }
 
 	public Map<String, Integer> getIntegralServiceMap() {
 		return integralServiceMap;
 	}
 
-	public void setIntegralServiceMap(Map<String, Integer> integralServiceMap) {
-		this.integralServiceMap = integralServiceMap;
-	}
+	// public void setIntegralServiceMap(Map<String, Integer> integralServiceMap) {
+	// this.integralServiceMap = integralServiceMap;
+	// }
 
 	public Map<String, MappingVo> getMappingVoMap() {
 		return mappingVoMap;
@@ -84,11 +88,16 @@ public class XmlParseContext {
 	}
 
 	public void clean() {
-		this.integralRefMap.clear();
-		this.integralRefMap = null;
+		// fix bug
+		if (null != this.integralRefMap) {
+			this.integralRefMap.clear();
+			this.integralRefMap = null;
+		}
 
-		this.integralServiceMap.clear();
-		this.integralServiceMap = null;
+		if (null != this.integralServiceMap) {
+			this.integralServiceMap.clear();
+			this.integralServiceMap = null;
+		}
 
 		this.mappingVoMap = null;
 
@@ -96,11 +105,15 @@ public class XmlParseContext {
 
 		this.defaultCacheVo = null;
 
-		this.integralServiceNsMap.clear();
-		this.integralServiceNsMap = null;
+		if (null != this.integralServiceNsMap) {
+			this.integralServiceNsMap.clear();
+			this.integralServiceNsMap = null;
+		}
 
-		this.integralServiceClassMap.clear();
-		this.integralServiceClassMap = null;
+		if (null != this.integralServiceClassMap) {
+			this.integralServiceClassMap.clear();
+			this.integralServiceClassMap = null;
+		}
 
 		this.transactionMatcher = null;
 	}

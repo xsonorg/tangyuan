@@ -122,4 +122,33 @@ public class DateUtils {
 		DateFormat fmt = new SimpleDateFormat(pattern);
 		return fmt.format(date);
 	}
+
+	/////
+
+	public static String getDateString(java.sql.Date date) {
+		return getDateString(date, DATE_FORMAT_NORMAL);
+	}
+
+	public static String getDateString(java.sql.Date date, String pattern) {
+		DateFormat fmt = new SimpleDateFormat(pattern);
+		return fmt.format(date);
+	}
+
+	public static String getTimeString(java.sql.Time date) {
+		return getTimeString(date, TIME_FORMAT_SHORT_S);
+	}
+
+	public static String getTimeString(java.sql.Time date, String pattern) {
+		DateFormat fmt = new SimpleDateFormat(pattern);
+		return fmt.format(date);
+	}
+
+	public static String getTimestampString(java.sql.Timestamp date) {
+		return getTimestampString(date, DATE_FORMAT_NORMAL);
+	}
+
+	public static String getTimestampString(java.sql.Timestamp date, String pattern) {
+		DateFormat fmt = new SimpleDateFormat(pattern);
+		return fmt.format(date);
+	}
 }
